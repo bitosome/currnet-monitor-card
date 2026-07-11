@@ -1,0 +1,9 @@
+{
+  "name": "Current Monitor Card",
+  "render_readme": true,
+  "filename": "current-monitor-card.js",
+  "content_in_root": false,
+  "persistent_directory": false,
+  "zip_release": false
+}
+

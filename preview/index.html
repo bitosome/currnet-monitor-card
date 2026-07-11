@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Current Monitor Card preview</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --primary-text-color: #f4f7fa;
+        --secondary-text-color: #9eabb8;
+        --disabled-text-color: #697684;
+        --primary-color: #38c7f3;
+        --ha-card-background: #172127;
+        --card-background-color: #172127;
+        --secondary-background-color: #202d34;
+        --divider-color: rgba(255, 255, 255, 0.13);
+        --ha-card-border-radius: 16px;
+        --ha-card-box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
+        font-family: Inter, Roboto, system-ui, sans-serif;
+        background: #0e1519;
+        color: var(--primary-text-color);
+      }
+
+      body { margin: 0; padding: 28px; }
+      main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(360px, 520px); gap: 28px; max-width: 1400px; margin: 0 auto; align-items: start; }
+      .stage, .editor-stage { min-width: 0; }
+      .stage > p, .editor-stage > p { color: var(--secondary-text-color); margin: 0 0 12px; }
+      .editor-shell { max-height: 86vh; overflow: auto; padding: 4px 8px 20px 4px; }
+      ha-card, ha-sortable { display: block; }
+      ha-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; font-size: 14px; }
+      @media (max-width: 900px) { main { grid-template-columns: 1fr; } body { padding: 16px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="stage">
+        <p>Card preview · live mock current values</p>
+        <div id="card"></div>
+      </section>
+      <section class="editor-stage">
+        <p>Visual editor preview</p>
+        <div class="editor-shell" id="editor"></div>
+      </section>
+    </main>
+
+    <script type="module">
+      class PreviewIcon extends HTMLElement {
+        static get observedAttributes() { return ['icon']; }
+        connectedCallback() { this.render(); }
+        attributeChangedCallback() { this.render(); }
+        render() {
+          const icon = this.getAttribute('icon') || '';
+          this.textContent = icon.includes('plus') ? '+' : icon.includes('delete') ? '×' : icon.includes('up') ? '↑' : icon.includes('down') ? '↓' : icon.includes('drag') ? '⠿' : '•';
+        }
+      }
+      class PreviewForm extends HTMLElement {
+        set data(value) { this._data = value; this.render(); }
+        get data() { return this._data; }
+        set schema(value) { this._schema = value; this.render(); }
+        set hass(value) { this._hass = value; this.render(); }
+        set computeLabel(value) { this._computeLabel = value; this.render(); }
+        connectedCallback() { this.render(); }
+        render() {
+          const entity = this._data?.entity || '';
+          this.innerHTML = `<label style="display:grid;gap:4px;color:var(--secondary-text-color);font-size:12px;font-weight:700"><span>Current sensor</span><input value="${entity}" style="min-height:42px;padding:9px 10px;border:1px solid var(--divider-color);border-radius:8px;background:var(--secondary-background-color);color:var(--primary-text-color)" /></label>`;
+        }
+      }
+      if (!customElements.get('ha-card')) customElements.define('ha-card', class extends HTMLElement {});
+      if (!customElements.get('ha-icon')) customElements.define('ha-icon', PreviewIcon);
+      if (!customElements.get('ha-form')) customElements.define('ha-form', PreviewForm);
+      if (!customElements.get('ha-sortable')) customElements.define('ha-sortable', class extends HTMLElement {});
+      window.loadCardHelpers = async () => ({ createCardElement: () => undefined });
+
+      await import('../dist/current-monitor-card.js');
+
+      const definitions = [
+        ['L1', 2.3], ['L2', 7.8], ['L3', 13.4], ['Workshop', 17.2],
+        ['EVSE 1', 10.1], ['EVSE 2', 15.9], ['Sauna', 0], ['Kitchen', 4.1],
+        ['Office', 8.5], ['Utility', 12.1], ['Heat pump', 'unavailable'], ['Spare', -0.2],
+      ];
+      const tiles = definitions.map(([name], index) => ({ entity: `sensor.preview_current_${index + 1}`, name }));
+      const states = Object.fromEntries(definitions.map(([name, value], index) => [
+        `sensor.preview_current_${index + 1}`,
+        { state: String(value), attributes: { friendly_name: `${name} current`, unit_of_measurement: 'A', device_class: 'current' } },
+      ]));
+      const hass = { states, locale: { language: 'en' } };
+      const config = {
+        type: 'custom:current-monitor-card',
+        name: 'Electrical currents',
+        columns: 4,
+        decimal_places: 1,
+        limits: { green: 4, yellow: 8, orange: 12, alert: 16 },
+        tiles,
+      };
+
+      const card = document.createElement('current-monitor-card');
+      card.setConfig(config);
+      card.hass = hass;
+      document.querySelector('#card').append(card);
+
+      const editor = document.createElement('current-monitor-card-editor');
+      editor.setConfig(config);
+      editor.hass = hass;
+      editor.addEventListener('config-changed', (event) => card.setConfig(event.detail.config));
+      document.querySelector('#editor').append(editor);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,17 @@
+type: custom:current-monitor-card
+name: Phase currents
+columns: 3
+decimal_places: 1
+limits:
+  green: 4
+  yellow: 8
+  orange: 12
+  alert: 16
+tiles:
+  - name: L1
+    entity: sensor.shelly_pro_3em_1_phase_a_current
+  - name: L2
+    entity: sensor.shelly_pro_3em_1_phase_b_current
+  - name: L3
+    entity: sensor.shelly_pro_3em_1_phase_c_current
+
