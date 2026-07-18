@@ -232,10 +232,28 @@ export class CurrentMonitorCardEditor extends LitElement {
             friendlyName || `Tile ${index + 1}`,
           )}
           ${this._textField(
+            'Phase (optional)',
+            tile.phase || '',
+            (value) => this._updateTile(index, { phase: value || undefined }),
+            'e.g. L1',
+          )}
+          ${this._textField(
+            'Current transformer (optional)',
+            tile.current_transformer || '',
+            (value) => this._updateTile(index, { current_transformer: value || undefined }),
+            'e.g. CT1',
+          )}
+          ${this._textField(
             'Display unit override (optional)',
             tile.unit || '',
             (value) => this._updateTile(index, { unit: value || undefined }),
             this._config.unit || 'Entity unit or A',
+          )}
+          ${this._textField(
+            'Note (optional)',
+            tile.note || '',
+            (value) => this._updateTile(index, { note: value || undefined }),
+            'Devices on this circuit breaker',
           )}
         </div>
       </article>

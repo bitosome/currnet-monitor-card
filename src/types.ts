@@ -14,6 +14,9 @@ export interface CurrentMonitorTileConfig {
   entity?: string;
   name?: string;
   unit?: string;
+  phase?: string;
+  current_transformer?: string;
+  note?: string;
 }
 
 export interface CurrentMonitorLimits {

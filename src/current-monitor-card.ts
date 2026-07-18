@@ -155,6 +155,9 @@ export class CurrentMonitorCard extends LitElement {
     const entity = entityId ? this.hass?.states?.[entityId] : undefined;
     const friendlyName = textAttribute(entity, 'friendly_name');
     const name = tile.name?.trim() || friendlyName || fallbackEntityName(entityId) || `Tile ${index + 1}`;
+    const phase = tile.phase?.trim() || '';
+    const currentTransformer = tile.current_transformer?.trim() || '';
+    const note = tile.note?.trim() || '';
     const entityUnit = textAttribute(entity, 'unit_of_measurement');
     const sourceUnit = entityUnit || config.unit.trim() || 'A';
     const unit = tile.unit?.trim() || entityUnit || config.unit.trim() || 'A';
@@ -169,6 +172,8 @@ export class CurrentMonitorCard extends LitElement {
     const ariaValue = reading.available
       ? `${display} ${unit}${reading.alert ? ', alert' : ''}`
       : 'unavailable';
+    const ariaMeta = [phase, currentTransformer, note].filter(Boolean).join(' · ');
+    const ariaLabel = ariaMeta ? `${name} (${ariaMeta}): ${ariaValue}` : `${name}: ${ariaValue}`;
 
     return html`
       <div class="tile-wrap" role="listitem">
@@ -179,9 +184,9 @@ export class CurrentMonitorCard extends LitElement {
           data-index=${index}
           data-entity=${entityId}
           data-meter-level=${reading.level}
-          aria-label=${`${name}: ${ariaValue}`}
+          aria-label=${ariaLabel}
           aria-disabled=${entityId ? 'false' : 'true'}
-          title=${entityId ? `${name} · ${ariaValue}` : `${name} · choose a sensor in the editor`}
+          title=${entityId ? `${ariaLabel}` : `${name} · choose a sensor in the editor`}
           @pointerdown=${() => this._startHold(entityId)}
           @pointerup=${this._finishHold}
           @pointercancel=${this._abortHold}
@@ -196,12 +201,31 @@ export class CurrentMonitorCard extends LitElement {
               ></span>
             `)}
           </span>
-          <span class="tile-content">
-            <span class="tile-name">${name}</span>
+          <span class="reading-center" aria-hidden="true">
             <span class="reading-anchor">
               <span class="reading">${display}</span>
               <span class="unit">${unit}</span>
             </span>
+          </span>
+          <span class="tile-meta" aria-hidden="true">
+            ${phase || currentTransformer || name
+              ? html`
+                <span class="meta-header">
+                  ${phase || currentTransformer
+                    ? html`
+                      <span class="meta-badges">
+                        ${phase ? html`<span class="meta-badge meta-phase">${phase}</span>` : nothing}
+                        ${currentTransformer
+                          ? html`<span class="meta-badge meta-ct">${currentTransformer}</span>`
+                          : nothing}
+                      </span>
+                    `
+                    : nothing}
+                  ${name ? html`<span class="meta-name">${name}</span>` : nothing}
+                </span>
+              `
+              : nothing}
+            ${note ? html`<span class="meta-note">${note}</span>` : nothing}
           </span>
         </button>
       </div>
@@ -395,26 +419,87 @@ export class CurrentMonitorCard extends LitElement {
       outline-offset: 2px;
     }
 
-    .tile-content {
+    .reading-center {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
       display: grid;
       place-items: center;
-      gap: var(--medium-gap);
-      min-width: 0;
-      max-width: 82%;
-      text-align: center;
+      padding: 0 6%;
       pointer-events: none;
     }
 
-    .tile-name {
+    .tile-meta {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .meta-header {
+      position: absolute;
+      top: var(--tile-padding);
+      left: var(--tile-padding);
+      right: var(--tile-padding);
+      display: grid;
+      gap: 2px;
+      justify-items: center;
+    }
+
+    .meta-badges {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--small-gap);
+      width: 100%;
+    }
+
+    .meta-badge {
+      max-width: 48%;
+      overflow: hidden;
+      padding: 1px 5px;
+      border: 1px solid color-mix(in srgb, var(--cmc-level-color) 30%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--cmc-level-color) 14%, transparent);
+      color: var(--cmc-level-color);
+      font-size: clamp(8px, 8cqw, 11px);
+      font-weight: 800;
+      line-height: 1.35;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .meta-badges:has(.meta-ct:only-child) {
+      justify-content: flex-end;
+    }
+
+    .meta-name {
       display: block;
       max-width: 100%;
       overflow: hidden;
       color: var(--secondary-text-color);
-      font-size: clamp(12px, 10cqw, 16px);
+      font-size: clamp(10px, 9cqw, 14px);
       font-weight: 700;
-      line-height: 1;
+      line-height: 1.1;
+      text-align: center;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .meta-note {
+      position: absolute;
+      bottom: var(--tile-padding);
+      left: var(--tile-padding);
+      right: var(--tile-padding);
+      display: -webkit-box;
+      overflow: hidden;
+      color: var(--secondary-text-color);
+      font-size: clamp(8px, 7.5cqw, 11px);
+      font-weight: 600;
+      line-height: 1.15;
+      text-align: center;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
 
     .reading-anchor {
@@ -555,12 +640,12 @@ export class CurrentMonitorCard extends LitElement {
         height: clamp(12px, 55cqw, 28px);
       }
 
-      .tile-content {
-        max-width: 94%;
-        gap: var(--small-gap);
+      .meta-note,
+      .meta-badges {
+        display: none;
       }
 
-      .tile-name {
+      .meta-name {
         font-size: clamp(8px, 18cqw, 11px);
       }
 
@@ -570,7 +655,7 @@ export class CurrentMonitorCard extends LitElement {
     }
 
     @container (max-width: 34px) {
-      .tile-name {
+      .meta-name {
         display: none;
       }
 

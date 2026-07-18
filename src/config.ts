@@ -7,7 +7,7 @@ import type {
 } from './types';
 import { isStateUnavailable } from './shared/state';
 
-export const CARD_VERSION = '0.1.0';
+export const CARD_VERSION = '0.2.0';
 export const CARD_TYPE = 'custom:current-monitor-card';
 export const MAX_TILES = 33;
 export const MAX_DECIMAL_PLACES = 4;
@@ -53,6 +53,11 @@ function normalizeTile(tile: unknown): CurrentMonitorTileConfig {
     ...(typeof candidate.entity === 'string' ? { entity: candidate.entity.trim() } : {}),
     ...(typeof candidate.name === 'string' ? { name: candidate.name } : {}),
     ...(typeof candidate.unit === 'string' ? { unit: candidate.unit } : {}),
+    ...(typeof candidate.phase === 'string' ? { phase: candidate.phase } : {}),
+    ...(typeof candidate.current_transformer === 'string'
+      ? { current_transformer: candidate.current_transformer }
+      : {}),
+    ...(typeof candidate.note === 'string' ? { note: candidate.note } : {}),
   };
 }
 
