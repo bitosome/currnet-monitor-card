@@ -133,11 +133,11 @@ check('invalid limit order renders a configuration error', Boolean(invalidCard.s
 let tooManyRejected = false;
 try {
   const oversized = document.createElement('current-monitor-card');
-  oversized.setConfig({ tiles: Array.from({ length: 34 }, () => ({})) });
+  oversized.setConfig({ tiles: Array.from({ length: 49 }, () => ({})) });
 } catch {
   tooManyRejected = true;
 }
-check('more than 33 tiles is rejected', tooManyRejected);
+check('more than 48 tiles is rejected', tooManyRejected);
 
 const sourceConfig = {
   type: 'custom:current-monitor-card',
@@ -201,10 +201,10 @@ await wait();
 check('editor can remove tiles', emittedConfigs.at(-1)?.tiles?.length === 3);
 
 const maxEditor = document.createElement('current-monitor-card-editor');
-maxEditor.setConfig({ tiles: Array.from({ length: 33 }, (_, index) => ({ name: `Tile ${index + 1}` })) });
+maxEditor.setConfig({ tiles: Array.from({ length: 48 }, (_, index) => ({ name: `Tile ${index + 1}` })) });
 document.body.appendChild(maxEditor);
 await wait(80);
-check('add button is disabled at 33 tiles', maxEditor.shadowRoot?.querySelector('[data-action="add-tile"]')?.disabled === true);
+check('add button is disabled at 48 tiles', maxEditor.shadowRoot?.querySelector('[data-action="add-tile"]')?.disabled === true);
 
 const failed = checks.filter(([, passed]) => !passed);
 console.log(failed.length ? `\n${failed.length} SMOKE TEST(S) FAILED` : '\nSMOKE TEST OK');

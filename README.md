@@ -2,12 +2,12 @@
 
 A configurable Home Assistant Lovelace card for visualizing current across phases, circuits, chargers, or other electrical loads.
 
-The card mirrors a physical four-segment current meter while using the shared `bitosome` card design language. It supports up to 33 ordered sensor tiles and includes a full visual editor.
+The card mirrors a physical four-segment current meter while using the shared `bitosome` card design language. It supports up to 48 ordered sensor tiles and includes a full visual editor.
 
 ## Features
 
 - One dynamic card instead of duplicated nested `button-card` templates.
-- From 1 to 33 current tiles.
+- From 1 to 48 current tiles.
 - Add, remove, drag, and arrow-reorder tiles in the visual editor.
 - Configurable number of tiles per row.
 - Native Home Assistant sensor picker for every tile.
@@ -57,7 +57,7 @@ Add **Current Monitor Card** from the dashboard card picker. The visual editor p
 
 - card title, columns, decimal places, and default unit;
 - green, yellow, orange, and alert limits;
-- add/remove controls for up to 33 tiles;
+- add/remove controls for up to 48 tiles;
 - drag-and-drop and accessible up/down reordering;
 - a sensor entity picker, name, and unit override for each tile.
 
@@ -91,14 +91,14 @@ The same configuration is available in [`example.yaml`](./example.yaml).
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `name` | string | empty | Optional card title. |
-| `columns` | integer | `3` | Maximum number of tiles per row, from 1 to 33. If fewer tiles exist, only the required columns are rendered. |
+| `columns` | integer | `3` | Maximum number of tiles per row, from 1 to 48. If fewer tiles exist, only the required columns are rendered. |
 | `decimal_places` | integer | `1` | Reading precision, from 0 to 4 decimal places. |
 | `unit` | string | empty | Source/display unit when an entity has no unit. The final fallback is `A`. |
 | `limits.green` | number (A) | `4` | Upper limit for one active green segment. |
 | `limits.yellow` | number (A) | `8` | Upper limit for green and yellow segments. |
 | `limits.orange` | number (A) | `12` | Upper limit for green, yellow, and orange segments. |
 | `limits.alert` | number (A) | `16` | Values above this limit blink in alert mode. |
-| `tiles` | array | three empty named tiles in the card picker | Ordered list of tile configurations. Maximum 33. |
+| `tiles` | array | three empty named tiles in the card picker | Ordered list of tile configurations. Maximum 48. |
 | `tiles[].entity` | string | empty | Sensor entity whose numeric state is displayed. |
 | `tiles[].name` | string | empty | Optional display name. If left empty, no name is shown (the entity name is still used for accessibility). |
 | `tiles[].phase` | `L1` \| `L2` \| `L3` | empty | Optional phase badge (top-left corner). Chosen from a dropdown in the editor and colour-coded: L1 brown, L2 black, L3 grey. |
@@ -142,7 +142,7 @@ Replace the complete `custom:button-card` configuration with the example above. 
 
 There is one deliberate boundary change from the supplied legacy template: that template alerts at exactly `16 A` (`>= 16`), while this card alerts only above `16 A`. The new behavior matches the physical ESPHome monitor. Change the alert limit slightly below 16 if the legacy inclusive behavior is required.
 
-Unlike the previous template, styling and animations are defined once, regardless of whether the card renders 3 or 33 tiles.
+Unlike the previous template, styling and animations are defined once, regardless of whether the card renders 3 or 48 tiles.
 
 ## Design system
 

@@ -729,7 +729,7 @@ if (!customCardsWindow.customCards.some((entry) => entry.type === 'current-monit
   customCardsWindow.customCards.push({
     type: 'current-monitor-card',
     name: 'Current Monitor Card',
-    description: 'Configurable multi-sensor current meter with up to 33 ordered tiles.',
+    description: `Configurable multi-sensor current meter with up to ${MAX_TILES} ordered tiles.`,
     preview: true,
     version: CARD_VERSION,
   });
