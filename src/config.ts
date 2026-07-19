@@ -7,7 +7,7 @@ import type {
 } from './types';
 import { isStateUnavailable } from './shared/state';
 
-export const CARD_VERSION = '0.3.1';
+export const CARD_VERSION = '0.3.2';
 export const CARD_TYPE = 'custom:current-monitor-card';
 export const MAX_TILES = 33;
 export const MAX_DECIMAL_PLACES = 4;
@@ -129,7 +129,7 @@ export function meterReading(
   const amperes = value * (currentUnitMultiplier(sourceUnit) ?? 1);
 
   let level: MeterReading['level'] = 0;
-  if (amperes > 0 && amperes <= limits.green) level = 1;
+  if (amperes >= 0 && amperes <= limits.green) level = 1;
   else if (amperes > limits.green && amperes <= limits.yellow) level = 2;
   else if (amperes > limits.yellow && amperes <= limits.orange) level = 3;
   else if (amperes > limits.orange) level = 4;

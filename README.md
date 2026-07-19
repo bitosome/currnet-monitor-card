@@ -120,8 +120,8 @@ With the defaults, the cumulative segment behavior is:
 
 | Reading | Active segments | State |
 | --- | --- | --- |
-| `<= 0 A` | none | neutral |
-| `> 0 A` to `4 A` | green | normal |
+| unavailable | none | neutral |
+| `0 A` to `4 A` | green | normal |
 | `> 4 A` to `8 A` | green + yellow | elevated |
 | `> 8 A` to `12 A` | green + yellow + orange | high |
 | `> 12 A` to `16 A` | all four | red, steady |
