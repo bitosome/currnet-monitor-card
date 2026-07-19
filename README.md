@@ -101,7 +101,7 @@ The same configuration is available in [`example.yaml`](./example.yaml).
 | `tiles` | array | three empty named tiles in the card picker | Ordered list of tile configurations. Maximum 33. |
 | `tiles[].entity` | string | empty | Sensor entity whose numeric state is displayed. |
 | `tiles[].name` | string | entity friendly name | Optional display name. |
-| `tiles[].phase` | string | empty | Optional phase badge shown in the top-left corner (e.g. `L1`). |
+| `tiles[].phase` | `L1` \| `L2` \| `L3` | empty | Optional phase badge (top-left corner). Chosen from a dropdown in the editor and colour-coded: L1 brown, L2 black, L3 grey. |
 | `tiles[].current_transformer` | string | empty | Optional current-transformer badge shown in the top-right corner (e.g. `CT1`). |
 | `tiles[].note` | string | empty | Optional note shown at the bottom of the tile, e.g. devices connected to this circuit breaker. |
 | `tiles[].unit` | string | entity unit | Optional per-tile display-unit override. Recognized current units are converted. |

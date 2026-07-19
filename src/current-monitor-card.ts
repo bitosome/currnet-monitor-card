@@ -156,6 +156,7 @@ export class CurrentMonitorCard extends LitElement {
     const friendlyName = textAttribute(entity, 'friendly_name');
     const name = tile.name?.trim() || friendlyName || fallbackEntityName(entityId) || `Tile ${index + 1}`;
     const phase = tile.phase?.trim() || '';
+    const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
     const currentTransformer = tile.current_transformer?.trim() || '';
     const note = tile.note?.trim() || '';
     const entityUnit = textAttribute(entity, 'unit_of_measurement');
@@ -214,7 +215,7 @@ export class CurrentMonitorCard extends LitElement {
                   ${phase || currentTransformer
                     ? html`
                       <span class="meta-badges">
-                        ${phase ? html`<span class="meta-badge meta-phase">${phase}</span>` : nothing}
+                        ${phase ? html`<span class="meta-badge meta-phase${phaseClass}">${phase}</span>` : nothing}
                         ${currentTransformer
                           ? html`<span class="meta-badge meta-ct">${currentTransformer}</span>`
                           : nothing}
@@ -473,6 +474,24 @@ export class CurrentMonitorCard extends LitElement {
       justify-content: flex-end;
     }
 
+    .meta-phase.phase-l1 {
+      border-color: #5d4037;
+      background: #795548;
+      color: #fff;
+    }
+
+    .meta-phase.phase-l2 {
+      border-color: #000;
+      background: #212121;
+      color: #fff;
+    }
+
+    .meta-phase.phase-l3 {
+      border-color: #757575;
+      background: #9e9e9e;
+      color: #212121;
+    }
+
     .meta-name {
       display: block;
       max-width: 100%;
@@ -630,37 +649,55 @@ export class CurrentMonitorCard extends LitElement {
     }
 
     @container (max-width: 64px) {
-      .unit {
-        display: none;
-      }
-
       .meter {
         left: var(--small-gap);
         width: clamp(2px, 8cqw, 5px);
         height: clamp(12px, 55cqw, 28px);
       }
 
-      .meta-note,
-      .meta-badges {
-        display: none;
+      .meta-header {
+        top: var(--small-gap);
+        left: var(--small-gap);
+        right: var(--small-gap);
+        gap: 1px;
+      }
+
+      .meta-note {
+        bottom: var(--small-gap);
+        left: var(--small-gap);
+        right: var(--small-gap);
+        font-size: clamp(6px, 11cqw, 10px);
+      }
+
+      .meta-badge {
+        padding: 0 3px;
+        font-size: clamp(6px, 11cqw, 11px);
       }
 
       .meta-name {
-        font-size: clamp(8px, 18cqw, 11px);
+        font-size: clamp(7px, 15cqw, 12px);
       }
 
       .reading {
-        font-size: clamp(9px, 27cqw, 16px);
+        font-size: clamp(9px, 24cqw, 16px);
+      }
+
+      .unit {
+        font-size: 0.4em;
       }
     }
 
     @container (max-width: 34px) {
-      .meta-name {
-        display: none;
-      }
-
       .meter {
         gap: 0;
+      }
+
+      .meta-name {
+        font-size: clamp(6px, 16cqw, 9px);
+      }
+
+      .meta-note {
+        -webkit-line-clamp: 1;
       }
     }
 

@@ -231,11 +231,11 @@ export class CurrentMonitorCardEditor extends LitElement {
             (value) => this._updateTile(index, { name: value || undefined }),
             friendlyName || `Tile ${index + 1}`,
           )}
-          ${this._textField(
+          ${this._selectField(
             'Phase (optional)',
             tile.phase || '',
+            ['L1', 'L2', 'L3'],
             (value) => this._updateTile(index, { phase: value || undefined }),
-            'e.g. L1',
           )}
           ${this._textField(
             'Current transformer (optional)',
@@ -302,6 +302,29 @@ export class CurrentMonitorCardEditor extends LitElement {
           placeholder=${placeholder}
           @input=${(event: Event) => onInput((event.currentTarget as HTMLInputElement).value)}
         />
+      </label>
+    `;
+  }
+
+  private _selectField(
+    label: string,
+    value: string,
+    options: string[],
+    onChange: (value: string) => void,
+    emptyLabel = 'None',
+  ): TemplateResult {
+    return html`
+      <label class="field">
+        <span>${label}</span>
+        <select
+          .value=${value}
+          @change=${(event: Event) => onChange((event.currentTarget as HTMLSelectElement).value)}
+        >
+          <option value="" ?selected=${!value}>${emptyLabel}</option>
+          ${options.map(
+            (option) => html`<option value=${option} ?selected=${value === option}>${option}</option>`,
+          )}
+        </select>
       </label>
     `;
   }
@@ -513,7 +536,8 @@ export class CurrentMonitorCardEditor extends LitElement {
       min-height: 18px;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
       min-width: 0;
       min-height: 42px;
@@ -528,7 +552,8 @@ export class CurrentMonitorCardEditor extends LitElement {
       font-weight: 500;
     }
 
-    input:focus-visible {
+    input:focus-visible,
+    select:focus-visible {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 1px var(--primary-color);
     }

@@ -7,7 +7,7 @@ import type {
 } from './types';
 import { isStateUnavailable } from './shared/state';
 
-export const CARD_VERSION = '0.2.0';
+export const CARD_VERSION = '0.3.0';
 export const CARD_TYPE = 'custom:current-monitor-card';
 export const MAX_TILES = 33;
 export const MAX_DECIMAL_PLACES = 4;
