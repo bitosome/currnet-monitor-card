@@ -272,9 +272,7 @@ export class CurrentMonitorCard extends LitElement {
   private _renderNoteModal(): TemplateResult {
     const modal = this._noteModal;
     if (!modal) return html``;
-    const meta = [modal.phase, modal.ct ? `CT ${modal.ct}` : '']
-      .filter(Boolean)
-      .join(' \u00b7 ');
+    const phaseClass = /^l[123]$/i.test(modal.phase) ? ` phase-${modal.phase.toLowerCase()}` : '';
     return html`
       <div class="note-backdrop" @click=${this._closeNote}>
         <div
@@ -286,7 +284,14 @@ export class CurrentMonitorCard extends LitElement {
         >
           <div class="note-head">
             <div class="note-copy">
-              ${meta ? html`<div class="note-kicker">${meta}</div>` : nothing}
+              ${modal.phase || modal.ct
+                ? html`
+                  <div class="note-badges">
+                    ${modal.phase ? html`<span class="note-badge${phaseClass}">${modal.phase}</span>` : nothing}
+                    ${modal.ct ? html`<span class="note-badge">CT ${modal.ct}</span>` : nothing}
+                  </div>
+                `
+                : nothing}
               ${modal.title ? html`<div class="note-title">${modal.title}</div>` : nothing}
             </div>
             <button class="note-close" type="button" @click=${this._closeNote}>Close</button>
@@ -617,13 +622,40 @@ export class CurrentMonitorCard extends LitElement {
       margin-bottom: 12px;
     }
 
-    .note-kicker {
-      margin-bottom: 4px;
-      color: var(--secondary-text-color);
+    .note-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .note-badge {
+      padding: 2px 9px;
+      border: 1px solid var(--divider-color, rgba(128, 128, 128, 0.3));
+      border-radius: 999px;
+      background: var(--secondary-background-color, rgba(128, 128, 128, 0.14));
+      color: var(--primary-text-color);
       font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .note-badge.phase-l1 {
+      border-color: #5d4037;
+      background: #795548;
+      color: #fff;
+    }
+
+    .note-badge.phase-l2 {
+      border-color: #000;
+      background: #212121;
+      color: #fff;
+    }
+
+    .note-badge.phase-l3 {
+      border-color: #757575;
+      background: #9e9e9e;
+      color: #212121;
     }
 
     .note-title {

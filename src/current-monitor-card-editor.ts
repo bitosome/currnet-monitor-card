@@ -249,11 +249,11 @@ export class CurrentMonitorCardEditor extends LitElement {
             (value) => this._updateTile(index, { unit: value || undefined }),
             this._config.unit || 'Entity unit or A',
           )}
-          ${this._textField(
+          ${this._multilineField(
             'Note (optional)',
             tile.note || '',
             (value) => this._updateTile(index, { note: value || undefined }),
-            'Devices on this circuit breaker',
+            'Devices on this circuit breaker (new lines allowed)',
           )}
         </div>
       </article>
@@ -302,6 +302,25 @@ export class CurrentMonitorCardEditor extends LitElement {
           placeholder=${placeholder}
           @input=${(event: Event) => onInput((event.currentTarget as HTMLInputElement).value)}
         />
+      </label>
+    `;
+  }
+
+  private _multilineField(
+    label: string,
+    value: string,
+    onInput: (value: string) => void,
+    placeholder = '',
+  ): TemplateResult {
+    return html`
+      <label class="field">
+        <span>${label}</span>
+        <textarea
+          rows="3"
+          placeholder=${placeholder}
+          .value=${value}
+          @input=${(event: Event) => onInput((event.currentTarget as HTMLTextAreaElement).value)}
+        ></textarea>
       </label>
     `;
   }
@@ -537,7 +556,8 @@ export class CurrentMonitorCardEditor extends LitElement {
     }
 
     input,
-    select {
+    select,
+    textarea {
       width: 100%;
       min-width: 0;
       min-height: 42px;
@@ -552,8 +572,15 @@ export class CurrentMonitorCardEditor extends LitElement {
       font-weight: 500;
     }
 
+    textarea {
+      min-height: 72px;
+      line-height: 1.4;
+      resize: vertical;
+    }
+
     input:focus-visible,
-    select:focus-visible {
+    select:focus-visible,
+    textarea:focus-visible {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 1px var(--primary-color);
     }
