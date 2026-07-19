@@ -67,6 +67,8 @@ export class CurrentMonitorCard extends LitElement {
 
   private _aggregatorPhase?: string;
 
+  private _aggWidth?: number;
+
   private _holdTimer?: number;
 
   private _holdResetTimer?: number;
@@ -79,6 +81,7 @@ export class CurrentMonitorCard extends LitElement {
     _configurationError: { state: true },
     _noteModal: { state: true },
     _aggregatorPhase: { state: true },
+    _aggWidth: { state: true },
   };
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -111,7 +114,13 @@ export class CurrentMonitorCard extends LitElement {
     this._clearHoldReset();
     window.removeEventListener('keydown', this._onNoteKeydown);
     window.removeEventListener('keydown', this._onAggKeydown);
+    document.body.style.overflow = '';
     super.disconnectedCallback();
+  }
+
+  private _syncScrollLock(): void {
+    const open = this._aggregatorPhase !== undefined || this._noteModal !== undefined;
+    document.body.style.overflow = open ? 'hidden' : '';
   }
 
   public getCardSize(): number {
@@ -281,12 +290,14 @@ export class CurrentMonitorCard extends LitElement {
   private _openNote(title: string, phase: string, ct: string, note: string): void {
     this._noteModal = { title, phase, ct, note };
     window.addEventListener('keydown', this._onNoteKeydown);
+    this._syncScrollLock();
   }
 
   private _closeNote = (): void => {
     if (!this._noteModal) return;
     this._noteModal = undefined;
     window.removeEventListener('keydown', this._onNoteKeydown);
+    this._syncScrollLock();
   };
 
   private _onNoteKeydown = (event: KeyboardEvent): void => {
@@ -294,14 +305,17 @@ export class CurrentMonitorCard extends LitElement {
   };
 
   private _openAggregator(phase: string): void {
+    this._aggWidth = Math.round(this.getBoundingClientRect().width) || undefined;
     this._aggregatorPhase = phase;
     window.addEventListener('keydown', this._onAggKeydown);
+    this._syncScrollLock();
   }
 
   private _closeAggregator = (): void => {
     if (this._aggregatorPhase === undefined) return;
     this._aggregatorPhase = undefined;
     window.removeEventListener('keydown', this._onAggKeydown);
+    this._syncScrollLock();
   };
 
   private _onAggKeydown = (event: KeyboardEvent): void => {
@@ -314,13 +328,18 @@ export class CurrentMonitorCard extends LitElement {
     const config = this._config;
     const phaseTiles = config.tiles
       .map((tile, index) => ({ tile, index }))
-      .filter(({ tile }) => (tile.phase?.trim() || '').toLowerCase() === phase.toLowerCase());
+      .filter(
+        ({ tile }) =>
+          (tile.phase?.trim() || '').toLowerCase() === phase.toLowerCase() && tile.aggregator !== true,
+      );
     const columns = Math.min(config.columns, Math.max(1, phaseTiles.length));
     const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
+    const panelStyle = this._aggWidth ? `width:${this._aggWidth}px` : '';
     return html`
-      <div class="note-backdrop" @click=${this._closeAggregator}>
+      <div class="agg-backdrop" @click=${this._closeAggregator}>
         <div
           class="agg-panel"
+          style=${panelStyle}
           role="dialog"
           aria-modal="true"
           aria-label=${`Phase ${phase}`}
@@ -687,20 +706,32 @@ export class CurrentMonitorCard extends LitElement {
       text-decoration-style: dotted;
     }
 
-    .note-backdrop {
+    .note-backdrop,
+    .agg-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 2147483647;
       display: grid;
       place-items: center;
       padding: 16px;
       background: rgba(0, 0, 0, 0.48);
+      touch-action: none;
+      overscroll-behavior: contain;
+    }
+
+    .agg-backdrop {
+      z-index: 2147483646;
+    }
+
+    .note-backdrop {
+      z-index: 2147483647;
     }
 
     .note-panel {
       width: min(92vw, 420px);
       max-height: min(82vh, 560px);
       overflow: auto;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
       padding: 16px;
       border-radius: var(--tile-border-radius);
       background: var(--ha-card-background, var(--card-background-color));
@@ -798,8 +829,11 @@ export class CurrentMonitorCard extends LitElement {
 
     .agg-panel {
       width: min(96vw, 760px);
+      max-width: 96vw;
       max-height: min(86vh, 720px);
       overflow: auto;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
       padding: 16px;
       border-radius: var(--tile-border-radius);
       background: var(--ha-card-background, var(--card-background-color));
