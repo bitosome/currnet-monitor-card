@@ -105,6 +105,7 @@ The same configuration is available in [`example.yaml`](./example.yaml).
 | `tiles[].current_transformer` | string | empty | Optional current-transformer badge shown in the top-right corner (e.g. `CT1`). |
 | `tiles[].note` | string | empty | Optional note shown at the bottom of the tile, e.g. devices connected to this circuit breaker. Supports multiple lines (new lines). Click/tap the note to open a modal with the full text and the tile's phase/CT badges. |
 | `tiles[].aggregator` | boolean | `false` | When enabled (checkbox in the editor), tapping the tile opens a modal listing every tile that shares the same `phase` (reusing the same tile rendering). Handy as a per-phase summary tile. |
+| `tiles[].active` | boolean | `true` | When set to `false` (uncheck **Active** in the editor), the tile is **hidden from the main grid** and only appears inside the aggregator modal for its phase. |
 | `tiles[].unit` | string | entity unit | Optional per-tile display-unit override. Recognized current units are converted. |
 
 Limits must be finite and strictly increasing:

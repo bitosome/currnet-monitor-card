@@ -18,6 +18,7 @@ export interface CurrentMonitorTileConfig {
   current_transformer?: string;
   note?: string;
   aggregator?: boolean;
+  active?: boolean;
 }
 
 export interface CurrentMonitorLimits {

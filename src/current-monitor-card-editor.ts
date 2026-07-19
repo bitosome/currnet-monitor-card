@@ -191,7 +191,7 @@ export class CurrentMonitorCardEditor extends LitElement {
           </span>
           <div class="tile-summary">
             <strong>${heading}</strong>
-            <span>${tile.entity || 'No sensor selected'}</span>
+            <span>${tile.entity || 'No sensor selected'}${tile.active === false ? ' · inactive' : ''}</span>
           </div>
           <div class="tile-actions">
             ${this._iconButton('mdi:arrow-up', `Move ${heading} up`, 'move-up', index, index === 0)}
@@ -259,6 +259,11 @@ export class CurrentMonitorCardEditor extends LitElement {
             'Aggregator (tap opens all tiles of the same phase)',
             tile.aggregator === true,
             (checked) => this._updateTile(index, { aggregator: checked || undefined }),
+          )}
+          ${this._checkboxField(
+            'Active (uncheck to show this tile only inside the aggregator)',
+            tile.active !== false,
+            (checked) => this._updateTile(index, { active: checked ? undefined : false }),
           )}
         </div>
       </article>

@@ -116,8 +116,9 @@ export class CurrentMonitorCard extends LitElement {
 
   public getCardSize(): number {
     if (!this._config) return 1;
-    const renderedColumns = Math.min(this._config.columns, Math.max(1, this._config.tiles.length));
-    const rows = Math.ceil(this._config.tiles.length / renderedColumns);
+    const activeCount = this._config.tiles.filter((tile) => tile.active !== false).length;
+    const renderedColumns = Math.min(this._config.columns, Math.max(1, activeCount));
+    const rows = Math.ceil(Math.max(1, activeCount) / renderedColumns);
     const unitsPerGridRow = Math.max(1, Math.ceil(8 / renderedColumns));
     return Math.max(1, rows * unitsPerGridRow + (this._config.name.trim() ? 1 : 0));
   }
@@ -126,7 +127,10 @@ export class CurrentMonitorCard extends LitElement {
     if (!this._config) return html``;
     const config = this._config;
     const title = config.name.trim();
-    const renderedColumns = Math.min(config.columns, Math.max(1, config.tiles.length));
+    const activeTiles = config.tiles
+      .map((tile, index) => ({ tile, index }))
+      .filter(({ tile }) => tile.active !== false);
+    const renderedColumns = Math.min(config.columns, Math.max(1, activeTiles.length));
     const densityClass = renderedColumns >= 9 ? 'dense' : renderedColumns >= 6 ? 'compact' : '';
 
     return html`
@@ -135,7 +139,7 @@ export class CurrentMonitorCard extends LitElement {
           ${title ? html`<h2>${title}</h2>` : nothing}
           ${this._configurationError
             ? html`<div class="configuration-error" role="alert">${this._configurationError}</div>`
-            : config.tiles.length === 0
+            : activeTiles.length === 0
               ? html`<div class="empty-state">Add at least one current sensor in the card editor.</div>`
               : html`
                 <div
@@ -145,9 +149,9 @@ export class CurrentMonitorCard extends LitElement {
                   aria-label=${title || 'Current readings'}
                 >
                   ${repeat(
-                    config.tiles,
-                    (tile, index) => `${tile.entity || 'empty'}-${index}`,
-                    (tile, index) => this._renderTile(tile, index, config),
+                    activeTiles,
+                    ({ tile, index }) => `${tile.entity || 'empty'}-${index}`,
+                    ({ tile, index }) => this._renderTile(tile, index, config),
                   )}
                 </div>
               `}

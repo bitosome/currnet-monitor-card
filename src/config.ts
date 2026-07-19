@@ -7,7 +7,7 @@ import type {
 } from './types';
 import { isStateUnavailable } from './shared/state';
 
-export const CARD_VERSION = '0.5.0';
+export const CARD_VERSION = '0.6.0';
 export const CARD_TYPE = 'custom:current-monitor-card';
 export const MAX_TILES = 48;
 export const MAX_DECIMAL_PLACES = 4;
@@ -59,6 +59,7 @@ function normalizeTile(tile: unknown): CurrentMonitorTileConfig {
       : {}),
     ...(typeof candidate.note === 'string' ? { note: candidate.note } : {}),
     ...(candidate.aggregator === true ? { aggregator: true } : {}),
+    ...(candidate.active === false ? { active: false } : {}),
   };
 }
 
