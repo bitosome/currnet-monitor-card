@@ -63,6 +63,8 @@ export class CurrentMonitorCard extends LitElement {
 
   private _noteModal?: { title: string; phase: string; ct: string; note: string };
 
+  private _pendingNote?: { title: string; phase: string; ct: string; note: string };
+
   private _holdTimer?: number;
 
   private _holdResetTimer?: number;
@@ -236,10 +238,14 @@ export class CurrentMonitorCard extends LitElement {
               ? html`<span
                   class="meta-note"
                   title="Show full note"
-                  @pointerdown=${(event: Event) => event.stopPropagation()}
-                  @click=${(event: Event) => {
+                  @pointerdown=${(event: Event) => {
                     event.stopPropagation();
-                    this._openNote(displayName || name, phase, currentTransformer, note);
+                    this._pendingNote = {
+                      title: displayName || name,
+                      phase,
+                      ct: currentTransformer,
+                      note,
+                    };
                   }}
                 >${note}</span>`
               : nothing}
@@ -306,6 +312,7 @@ export class CurrentMonitorCard extends LitElement {
     this._cancelHold();
     this._clearHoldReset();
     this._holdTriggered = false;
+    this._pendingNote = undefined;
     if (!entityId) return;
     this._holdTimer = window.setTimeout(() => {
       this._holdTimer = undefined;
@@ -348,6 +355,13 @@ export class CurrentMonitorCard extends LitElement {
     if (this._holdTriggered) {
       this._clearHoldReset();
       this._holdTriggered = false;
+      this._pendingNote = undefined;
+      return;
+    }
+    if (this._pendingNote) {
+      const pending = this._pendingNote;
+      this._pendingNote = undefined;
+      this._openNote(pending.title, pending.phase, pending.ct, pending.note);
       return;
     }
     this._openMoreInfo(entityId);
@@ -585,6 +599,7 @@ export class CurrentMonitorCard extends LitElement {
       -webkit-line-clamp: 2;
       pointer-events: auto;
       cursor: pointer;
+      touch-action: manipulation;
     }
 
     .meta-note:hover {
