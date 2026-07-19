@@ -155,6 +155,7 @@ export class CurrentMonitorCard extends LitElement {
     const entity = entityId ? this.hass?.states?.[entityId] : undefined;
     const friendlyName = textAttribute(entity, 'friendly_name');
     const name = tile.name?.trim() || friendlyName || fallbackEntityName(entityId) || `Tile ${index + 1}`;
+    const displayName = tile.name?.trim() || '';
     const phase = tile.phase?.trim() || '';
     const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
     const currentTransformer = tile.current_transformer?.trim() || '';
@@ -209,7 +210,7 @@ export class CurrentMonitorCard extends LitElement {
             </span>
           </span>
           <span class="tile-meta" aria-hidden="true">
-            ${phase || currentTransformer || name
+            ${phase || currentTransformer || displayName
               ? html`
                 <span class="meta-header">
                   ${phase || currentTransformer
@@ -222,7 +223,7 @@ export class CurrentMonitorCard extends LitElement {
                       </span>
                     `
                     : nothing}
-                  ${name ? html`<span class="meta-name">${name}</span>` : nothing}
+                  ${displayName ? html`<span class="meta-name">${displayName}</span>` : nothing}
                 </span>
               `
               : nothing}
