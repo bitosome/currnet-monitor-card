@@ -255,6 +255,11 @@ export class CurrentMonitorCardEditor extends LitElement {
             (value) => this._updateTile(index, { note: value || undefined }),
             'Devices on this circuit breaker (new lines allowed)',
           )}
+          ${this._checkboxField(
+            'Aggregator (tap opens all tiles of the same phase)',
+            tile.aggregator === true,
+            (checked) => this._updateTile(index, { aggregator: checked || undefined }),
+          )}
         </div>
       </article>
     `;
@@ -302,6 +307,23 @@ export class CurrentMonitorCardEditor extends LitElement {
           placeholder=${placeholder}
           @input=${(event: Event) => onInput((event.currentTarget as HTMLInputElement).value)}
         />
+      </label>
+    `;
+  }
+
+  private _checkboxField(
+    label: string,
+    checked: boolean,
+    onChange: (checked: boolean) => void,
+  ): TemplateResult {
+    return html`
+      <label class="field field-inline">
+        <input
+          type="checkbox"
+          .checked=${checked}
+          @change=${(event: Event) => onChange((event.currentTarget as HTMLInputElement).checked)}
+        />
+        <span>${label}</span>
       </label>
     `;
   }
@@ -583,6 +605,23 @@ export class CurrentMonitorCardEditor extends LitElement {
     textarea:focus-visible {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 1px var(--primary-color);
+    }
+
+    .field-inline {
+      grid-auto-flow: column;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type='checkbox'] {
+      width: 20px;
+      min-width: 20px;
+      height: 20px;
+      min-height: 20px;
+      padding: 0;
+      accent-color: var(--primary-color);
+      cursor: pointer;
     }
 
     .limit-field i {

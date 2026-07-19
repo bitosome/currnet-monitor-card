@@ -65,6 +65,8 @@ export class CurrentMonitorCard extends LitElement {
 
   private _pendingNote?: { title: string; phase: string; ct: string; note: string };
 
+  private _aggregatorPhase?: string;
+
   private _holdTimer?: number;
 
   private _holdResetTimer?: number;
@@ -76,6 +78,7 @@ export class CurrentMonitorCard extends LitElement {
     _config: { state: true },
     _configurationError: { state: true },
     _noteModal: { state: true },
+    _aggregatorPhase: { state: true },
   };
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -107,6 +110,7 @@ export class CurrentMonitorCard extends LitElement {
     this._cancelHold();
     this._clearHoldReset();
     window.removeEventListener('keydown', this._onNoteKeydown);
+    window.removeEventListener('keydown', this._onAggKeydown);
     super.disconnectedCallback();
   }
 
@@ -149,6 +153,7 @@ export class CurrentMonitorCard extends LitElement {
               `}
         </div>
         ${this._noteModal ? this._renderNoteModal() : nothing}
+        ${this._aggregatorPhase ? this._renderAggregatorModal() : nothing}
       </ha-card>
     `;
   }
@@ -157,6 +162,7 @@ export class CurrentMonitorCard extends LitElement {
     tile: CurrentMonitorTileConfig,
     index: number,
     config: NormalizedCurrentMonitorCardConfig,
+    inModal = false,
   ): TemplateResult {
     const entityId = tile.entity?.trim() || '';
     const entity = entityId ? this.hass?.states?.[entityId] : undefined;
@@ -165,6 +171,7 @@ export class CurrentMonitorCard extends LitElement {
     const displayName = tile.name?.trim() || '';
     const phase = tile.phase?.trim() || '';
     const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
+    const isAggregator = tile.aggregator === true && !inModal && phase !== '';
     const currentTransformer = tile.current_transformer?.trim() || '';
     const note = tile.note?.trim() || '';
     const entityUnit = textAttribute(entity, 'unit_of_measurement');
@@ -188,20 +195,27 @@ export class CurrentMonitorCard extends LitElement {
       <div class="tile-wrap" role="listitem">
         <span class="glow-under ${reading.alert ? 'alert' : ''}" aria-hidden="true"></span>
         <button
-          class="tile level-${level} ${reading.alert ? 'alert' : ''} ${reading.available ? '' : 'unavailable'}"
+          class="tile level-${level} ${reading.alert ? 'alert' : ''} ${reading.available ? '' : 'unavailable'} ${isAggregator ? 'is-aggregator' : ''}"
           type="button"
           data-index=${index}
           data-entity=${entityId}
           data-meter-level=${reading.level}
-          aria-label=${ariaLabel}
-          aria-disabled=${entityId ? 'false' : 'true'}
-          title=${entityId ? `${ariaLabel}` : `${name} · choose a sensor in the editor`}
-          @pointerdown=${() => this._startHold(entityId)}
+          aria-label=${isAggregator ? `${ariaLabel} (aggregator)` : ariaLabel}
+          aria-disabled=${entityId || isAggregator ? 'false' : 'true'}
+          title=${isAggregator
+            ? `Show all ${phase} circuits`
+            : entityId
+              ? `${ariaLabel}`
+              : `${name} \u00b7 choose a sensor in the editor`}
+          @pointerdown=${() => this._startHold(isAggregator ? '' : entityId)}
           @pointerup=${this._finishHold}
           @pointercancel=${this._abortHold}
           @pointerleave=${this._abortHold}
-          @click=${() => this._handleTileClick(entityId)}
+          @click=${() => this._handleTileClick(entityId, tile, inModal)}
         >
+          ${isAggregator
+            ? html`<span class="agg-indicator" aria-hidden="true">\u2922</span>`
+            : nothing}
           <span class="meter" aria-hidden="true">
             ${SEGMENTS.map((segment) => html`
               <span
@@ -274,6 +288,60 @@ export class CurrentMonitorCard extends LitElement {
   private _onNoteKeydown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') this._closeNote();
   };
+
+  private _openAggregator(phase: string): void {
+    this._aggregatorPhase = phase;
+    window.addEventListener('keydown', this._onAggKeydown);
+  }
+
+  private _closeAggregator = (): void => {
+    if (this._aggregatorPhase === undefined) return;
+    this._aggregatorPhase = undefined;
+    window.removeEventListener('keydown', this._onAggKeydown);
+  };
+
+  private _onAggKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') this._closeAggregator();
+  };
+
+  private _renderAggregatorModal(): TemplateResult {
+    const phase = this._aggregatorPhase;
+    if (!phase || !this._config) return html``;
+    const config = this._config;
+    const phaseTiles = config.tiles
+      .map((tile, index) => ({ tile, index }))
+      .filter(({ tile }) => (tile.phase?.trim() || '').toLowerCase() === phase.toLowerCase());
+    const columns = Math.min(config.columns, Math.max(1, phaseTiles.length));
+    const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
+    return html`
+      <div class="note-backdrop" @click=${this._closeAggregator}>
+        <div
+          class="agg-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label=${`Phase ${phase}`}
+          @click=${(event: Event) => event.stopPropagation()}
+        >
+          <div class="note-head">
+            <div class="note-copy">
+              <div class="note-badges">
+                <span class="note-badge${phaseClass}">${phase}</span>
+              </div>
+              <div class="note-title">${phaseTiles.length} ${phaseTiles.length === 1 ? 'circuit' : 'circuits'}</div>
+            </div>
+            <button class="note-close" type="button" @click=${this._closeAggregator}>Close</button>
+          </div>
+          <div class="tiles" style=${`--cmc-columns:${columns}`} role="list">
+            ${repeat(
+              phaseTiles,
+              ({ index }) => `agg-${index}`,
+              ({ tile, index }) => this._renderTile(tile, index, config, true),
+            )}
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   private _renderNoteModal(): TemplateResult {
     const modal = this._noteModal;
@@ -351,7 +419,7 @@ export class CurrentMonitorCard extends LitElement {
     this._holdTriggered = false;
   };
 
-  private _handleTileClick(entityId: string): void {
+  private _handleTileClick(entityId: string, tile?: CurrentMonitorTileConfig, inModal = false): void {
     if (this._holdTriggered) {
       this._clearHoldReset();
       this._holdTriggered = false;
@@ -363,6 +431,13 @@ export class CurrentMonitorCard extends LitElement {
       this._pendingNote = undefined;
       this._openNote(pending.title, pending.phase, pending.ct, pending.note);
       return;
+    }
+    if (!inModal && tile?.aggregator === true) {
+      const phase = tile.phase?.trim() || '';
+      if (phase) {
+        this._openAggregator(phase);
+        return;
+      }
     }
     this._openMoreInfo(entityId);
   }
@@ -699,6 +774,37 @@ export class CurrentMonitorCard extends LitElement {
       font: inherit;
       font-weight: 700;
       cursor: pointer;
+    }
+
+    .tile.is-aggregator {
+      border-color: color-mix(in srgb, var(--cmc-level-color) 55%, transparent);
+    }
+
+    .agg-indicator {
+      position: absolute;
+      right: var(--small-gap);
+      bottom: var(--small-gap);
+      z-index: 3;
+      color: var(--cmc-level-color);
+      font-size: clamp(9px, 10cqw, 13px);
+      line-height: 1;
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    .agg-panel {
+      width: min(96vw, 760px);
+      max-height: min(86vh, 720px);
+      overflow: auto;
+      padding: 16px;
+      border-radius: var(--tile-border-radius);
+      background: var(--ha-card-background, var(--card-background-color));
+      box-shadow: 0 22px 52px rgba(0, 0, 0, 0.36);
+      color: var(--primary-text-color);
+    }
+
+    .agg-panel .tiles {
+      isolation: isolate;
     }
 
     .reading-anchor {
