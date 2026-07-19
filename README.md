@@ -103,7 +103,7 @@ The same configuration is available in [`example.yaml`](./example.yaml).
 | `tiles[].name` | string | empty | Optional display name. If left empty, no name is shown (the entity name is still used for accessibility). |
 | `tiles[].phase` | `L1` \| `L2` \| `L3` | empty | Optional phase badge (top-left corner). Chosen from a dropdown in the editor and colour-coded: L1 brown, L2 black, L3 grey. |
 | `tiles[].current_transformer` | string | empty | Optional current-transformer badge shown in the top-right corner (e.g. `CT1`). |
-| `tiles[].note` | string | empty | Optional note shown at the bottom of the tile, e.g. devices connected to this circuit breaker. |
+| `tiles[].note` | string | empty | Optional note shown at the bottom of the tile, e.g. devices connected to this circuit breaker. Click/tap the note to open a modal with the full text (useful when it's truncated on the tile). |
 | `tiles[].unit` | string | entity unit | Optional per-tile display-unit override. Recognized current units are converted. |
 
 Limits must be finite and strictly increasing:

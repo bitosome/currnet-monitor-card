@@ -61,6 +61,8 @@ export class CurrentMonitorCard extends LitElement {
 
   private _configurationError = '';
 
+  private _noteModal?: { title: string; phase: string; ct: string; note: string };
+
   private _holdTimer?: number;
 
   private _holdResetTimer?: number;
@@ -71,6 +73,7 @@ export class CurrentMonitorCard extends LitElement {
     hass: { attribute: false },
     _config: { state: true },
     _configurationError: { state: true },
+    _noteModal: { state: true },
   };
 
   public static async getConfigElement(): Promise<HTMLElement> {
@@ -101,6 +104,7 @@ export class CurrentMonitorCard extends LitElement {
   public disconnectedCallback(): void {
     this._cancelHold();
     this._clearHoldReset();
+    window.removeEventListener('keydown', this._onNoteKeydown);
     super.disconnectedCallback();
   }
 
@@ -142,6 +146,7 @@ export class CurrentMonitorCard extends LitElement {
                 </div>
               `}
         </div>
+        ${this._noteModal ? this._renderNoteModal() : nothing}
       </ha-card>
     `;
   }
@@ -227,7 +232,17 @@ export class CurrentMonitorCard extends LitElement {
                 </span>
               `
               : nothing}
-            ${note ? html`<span class="meta-note">${note}</span>` : nothing}
+            ${note
+              ? html`<span
+                  class="meta-note"
+                  title="Show full note"
+                  @pointerdown=${(event: Event) => event.stopPropagation()}
+                  @click=${(event: Event) => {
+                    event.stopPropagation();
+                    this._openNote(displayName || name, phase, currentTransformer, note);
+                  }}
+                >${note}</span>`
+              : nothing}
           </span>
         </button>
       </div>
@@ -237,6 +252,49 @@ export class CurrentMonitorCard extends LitElement {
   private _openMoreInfo(entityId: string): void {
     if (!entityId) return;
     fireEvent(this, 'hass-more-info', { entityId });
+  }
+
+  private _openNote(title: string, phase: string, ct: string, note: string): void {
+    this._noteModal = { title, phase, ct, note };
+    window.addEventListener('keydown', this._onNoteKeydown);
+  }
+
+  private _closeNote = (): void => {
+    if (!this._noteModal) return;
+    this._noteModal = undefined;
+    window.removeEventListener('keydown', this._onNoteKeydown);
+  };
+
+  private _onNoteKeydown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') this._closeNote();
+  };
+
+  private _renderNoteModal(): TemplateResult {
+    const modal = this._noteModal;
+    if (!modal) return html``;
+    const meta = [modal.phase, modal.ct ? `CT ${modal.ct}` : '']
+      .filter(Boolean)
+      .join(' \u00b7 ');
+    return html`
+      <div class="note-backdrop" @click=${this._closeNote}>
+        <div
+          class="note-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Circuit note"
+          @click=${(event: Event) => event.stopPropagation()}
+        >
+          <div class="note-head">
+            <div class="note-copy">
+              ${meta ? html`<div class="note-kicker">${meta}</div>` : nothing}
+              ${modal.title ? html`<div class="note-title">${modal.title}</div>` : nothing}
+            </div>
+            <button class="note-close" type="button" @click=${this._closeNote}>Close</button>
+          </div>
+          <div class="note-body">${modal.note}</div>
+        </div>
+      </div>
+    `;
   }
 
   private _startHold(entityId: string): void {
@@ -520,6 +578,80 @@ export class CurrentMonitorCard extends LitElement {
       text-align: center;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .meta-note:hover {
+      color: var(--primary-text-color);
+      text-decoration: underline;
+      text-decoration-style: dotted;
+    }
+
+    .note-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.48);
+    }
+
+    .note-panel {
+      width: min(92vw, 420px);
+      max-height: min(82vh, 560px);
+      overflow: auto;
+      padding: 16px;
+      border-radius: var(--tile-border-radius);
+      background: var(--ha-card-background, var(--card-background-color));
+      box-shadow: 0 22px 52px rgba(0, 0, 0, 0.36);
+      color: var(--primary-text-color);
+    }
+
+    .note-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .note-kicker {
+      margin-bottom: 4px;
+      color: var(--secondary-text-color);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .note-title {
+      color: var(--primary-text-color);
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .note-body {
+      color: var(--primary-text-color);
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .note-close {
+      flex: 0 0 auto;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: var(--chip-border-radius, 8px);
+      background: var(--secondary-background-color, rgba(128, 128, 128, 0.16));
+      color: var(--primary-text-color);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .reading-anchor {
