@@ -334,7 +334,11 @@ export class CurrentMonitorCard extends LitElement {
       );
     const columns = Math.min(config.columns, Math.max(1, phaseTiles.length));
     const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
-    const panelStyle = this._aggWidth ? `width:${this._aggWidth}px` : '';
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+    const panelWidth = this._aggWidth && viewportWidth
+      ? Math.min(this._aggWidth, Math.round(viewportWidth * 0.96))
+      : this._aggWidth;
+    const panelStyle = panelWidth ? `width:${panelWidth}px` : '';
     return html`
       <div class="agg-backdrop" @click=${this._closeAggregator}>
         <div
