@@ -1,6 +1,6 @@
 {
   "name": "current-monitor-card",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "description": "A configurable multi-sensor current monitor card for Home Assistant",
   "keywords": [
     "home-assistant",
@@ -30,6 +30,7 @@
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {
+    "@bitosome/ha-card-ui": "https://github.com/bitosome/ha-card-ui/releases/download/v1.0.0/bitosome-ha-card-ui-1.0.0.tgz",
     "lit": "^3.3.1"
   },
   "devDependencies": {

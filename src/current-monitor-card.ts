@@ -2,7 +2,7 @@ import { LitElement, TemplateResult, html, nothing } from 'lit';
 import { currentMonitorStyles } from './styles/card';
 import { repeat } from 'lit/directives/repeat.js';
 import { designTokens } from './shared/design-tokens';
-import { familyStyles, dialogStyles, dialogClose, showFamilyDialog, closeFamilyDialog, disposeFamilyDialog } from './shared/card-primitives';
+import { familyStyles, dialogStyles, componentStyles, FamilyFlowController, renderFamilyDialog, stateChip, showEntityMoreInfo, buildGlow, tileGlow, glowStyles } from '@bitosome/ha-card-ui';
 import {
   CARD_TYPE,
   CARD_VERSION,
@@ -29,14 +29,6 @@ const SEGMENTS = [
   { index: 1, className: 'yellow', label: 'yellow' },
   { index: 0, className: 'green', label: 'green' },
 ] as const;
-
-function fireEvent(node: HTMLElement, type: string, detail: unknown): void {
-  node.dispatchEvent(new CustomEvent(type, {
-    detail,
-    bubbles: true,
-    composed: true,
-  }));
-}
 
 function levelClass(level: MeterLevel): string {
   return ['neutral', 'green', 'yellow', 'orange', 'red'][level] || 'neutral';
@@ -67,7 +59,10 @@ export class CurrentMonitorCard extends LitElement {
 
   private _aggregatorPhase?: string;
 
-  private _dialogOpener?: HTMLElement;
+  private _flow = new FamilyFlowController<'phase' | 'note'>(this, {
+    onChange: (route) => { if (route === 'phase') this._noteModal = undefined; },
+    onClose: () => { this._noteModal = undefined; this._aggregatorPhase = undefined; },
+  });
 
   private _holdTimer?: number;
 
@@ -111,42 +106,8 @@ export class CurrentMonitorCard extends LitElement {
   public disconnectedCallback(): void {
     this._cancelHold();
     this._clearHoldReset();
-    this.renderRoot.querySelectorAll<HTMLDialogElement>('dialog').forEach(disposeFamilyDialog);
     super.disconnectedCallback();
   }
-
-  protected updated(): void {
-    const dialog = this.renderRoot.querySelector<HTMLDialogElement>('dialog');
-    if (dialog && !dialog.open) {
-      showFamilyDialog(dialog, {
-        opener: this._dialogOpener,
-        initialFocus: dialog.querySelector<HTMLElement>('[tabindex="-1"]'),
-        onBackdrop: this._closeDialog,
-      });
-    }
-  }
-
-  private _captureDialogOpener(): void {
-    const active = (this.renderRoot as ShadowRoot).activeElement;
-    if (active instanceof HTMLElement && !active.closest('dialog')) this._dialogOpener = active;
-  }
-
-  private async _restoreFallbackFocus(): Promise<void> {
-    await this.updateComplete;
-    if (!this._noteModal && !this._aggregatorPhase && !this._dialogOpener?.isConnected) {
-      this.renderRoot.querySelector<HTMLElement>('.tile')?.focus({ preventScroll: true });
-    }
-  }
-
-  private _closeDialog = (): void => {
-    if (this._noteModal) this._closeNote();
-    else this._closeAggregator();
-  };
-
-  private _cancelDialog = (event: Event): void => {
-    event.preventDefault();
-    this._closeDialog();
-  };
 
   public getCardSize(): number {
     if (!this._config) return 1;
@@ -190,8 +151,7 @@ export class CurrentMonitorCard extends LitElement {
                 </div>
               `}
         </div>
-        ${this._noteModal ? this._renderNoteModal() : nothing}
-        ${this._aggregatorPhase && !this._noteModal ? this._renderAggregatorModal() : nothing}
+        ${this._renderDialog()}
       </ha-card>
     `;
   }
@@ -231,7 +191,7 @@ export class CurrentMonitorCard extends LitElement {
 
     return html`
       <div class="tile-wrap" role="listitem">
-        <span class="glow-under ${reading.alert ? 'alert' : ''}" aria-hidden="true"></span>
+        ${tileGlow(buildGlow({ weak: 'color-mix(in srgb,var(--status-alert-color) 16%,transparent)', strong: 'color-mix(in srgb,var(--status-alert-color) 30%,transparent)' }, 'static', reading.alert))}
         <button
           class="tile level-${level} ${reading.alert ? 'alert' : ''} ${reading.available ? '' : 'unavailable'} ${isAggregator ? 'is-aggregator' : ''}"
           type="button"
@@ -295,99 +255,38 @@ export class CurrentMonitorCard extends LitElement {
   }
 
   private _openMoreInfo(entityId: string): void {
-    if (!entityId) return;
-    this.renderRoot.querySelectorAll<HTMLDialogElement>('dialog').forEach(closeFamilyDialog);
-    this._noteModal = undefined;
-    this._aggregatorPhase = undefined;
-    fireEvent(this, 'hass-more-info', { entityId });
+    if (entityId) this._flow.handoff(() => showEntityMoreInfo(this, entityId));
   }
 
   private _openNote(title: string, phase: string, ct: string, note: string): void {
-    this._captureDialogOpener();
-    this.renderRoot.querySelectorAll<HTMLDialogElement>('dialog').forEach(disposeFamilyDialog);
     this._noteModal = { title, phase, ct, note };
+    if (this._flow.active) this._flow.push('note');
+    else this._flow.open('note');
   }
-
-  private _closeNote = (): void => {
-    if (!this._noteModal) return;
-    const dialog = this.renderRoot.querySelector<HTMLDialogElement>('dialog');
-    // Return to the phase view if the note was opened from it. Only the final
-    // dismissal returns focus to the dashboard; no competing top-layer traps.
-    if (this._aggregatorPhase) disposeFamilyDialog(dialog);
-    else closeFamilyDialog(dialog);
-    this._noteModal = undefined;
-    void this._restoreFallbackFocus();
-  };
 
   private _openAggregator(phase: string): void {
-    this._captureDialogOpener();
     this._aggregatorPhase = phase;
+    this._flow.open('phase');
   }
 
-  private _closeAggregator = (): void => {
-    if (this._aggregatorPhase === undefined) return;
-    closeFamilyDialog(this.renderRoot.querySelector<HTMLDialogElement>('dialog'));
-    this._aggregatorPhase = undefined;
-    void this._restoreFallbackFocus();
-  };
-
-  private _renderAggregatorModal(): TemplateResult {
+  private _renderDialog() {
+    if (this._flow.current === 'note' && this._noteModal) {
+      const modal = this._noteModal;
+      return renderFamilyDialog(this._flow, {
+        title: modal.title || 'Circuit note', className: 'note-panel',
+        content: html`<div class="note-badges">${modal.phase ? stateChip({label: modal.phase}) : nothing}${modal.ct ? stateChip({label: `CT ${modal.ct}`}) : nothing}</div><div class="note-body">${modal.note}</div>`,
+      });
+    }
     const phase = this._aggregatorPhase;
-    if (!phase || !this._config) return html``;
+    if (!phase || !this._config) return nothing;
     const config = this._config;
-    const phaseTiles = config.tiles
-      .map((tile, index) => ({ tile, index }))
-      .filter(
-        ({ tile }) =>
-          (tile.phase?.trim() || '').toLowerCase() === phase.toLowerCase() && tile.aggregator !== true,
-      );
+    const phaseTiles = config.tiles.map((tile, index) => ({tile,index})).filter(({tile}) => (tile.phase?.trim() || '').toLowerCase() === phase.toLowerCase() && tile.aggregator !== true);
     const columns = Math.min(config.columns, Math.max(1, phaseTiles.length));
-    const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
-    return html`
-      <dialog class="family-dialog agg-panel" aria-labelledby="phase-title" @cancel=${this._cancelDialog}>
-          <div class="family-dialog-header">
-            <div class="note-copy">
-              <div class="note-badges">
-                <span class="note-badge${phaseClass}">${phase}</span>
-              </div>
-              <h2 id="phase-title" tabindex="-1">${phaseTiles.length} ${phaseTiles.length === 1 ? 'circuit' : 'circuits'}</h2>
-            </div>
-            ${dialogClose(`Close phase ${phase} circuits`, this._closeAggregator)}
-          </div>
-          <div class="family-dialog-body"><div class="tiles" style=${`--cmc-columns:${columns}`} role="list">
-            ${repeat(
-              phaseTiles,
-              ({ index }) => `agg-${index}`,
-              ({ tile, index }) => this._renderTile(tile, index, config, true),
-            )}
-          </div></div>
-      </dialog>
-    `;
-  }
-
-  private _renderNoteModal(): TemplateResult {
-    const modal = this._noteModal;
-    if (!modal) return html``;
-    const phaseClass = /^l[123]$/i.test(modal.phase) ? ` phase-${modal.phase.toLowerCase()}` : '';
-    return html`
-      <dialog class="family-dialog note-panel" aria-labelledby="note-title" @cancel=${this._cancelDialog}>
-          <div class="family-dialog-header">
-            <div class="note-copy">
-              ${modal.phase || modal.ct
-                ? html`
-                  <div class="note-badges">
-                    ${modal.phase ? html`<span class="note-badge${phaseClass}">${modal.phase}</span>` : nothing}
-                    ${modal.ct ? html`<span class="note-badge">CT ${modal.ct}</span>` : nothing}
-                  </div>
-                `
-                : nothing}
-              <h2 id="note-title" tabindex="-1">${modal.title || 'Circuit note'}</h2>
-            </div>
-            ${dialogClose('Close circuit note', this._closeNote)}
-          </div>
-          <div class="family-dialog-body note-body">${modal.note}</div>
-      </dialog>
-    `;
+    return renderFamilyDialog(this._flow, {
+      title: `Phase ${phase} · ${phaseTiles.length} ${phaseTiles.length === 1 ? 'circuit' : 'circuits'}`,
+      className: 'agg-panel', wide: true,
+      content: html`<div class="tiles" style=${`--cmc-columns:${columns}`} role="list">${repeat(phaseTiles, ({index}) => `agg-${index}`, ({tile,index}) => this._renderTile(tile,index,config,true))}</div>`,
+    });
   }
 
   private _startHold(entityId: string): void {
@@ -448,7 +347,7 @@ export class CurrentMonitorCard extends LitElement {
     this._openMoreInfo(entityId);
   }
 
-  static styles = [designTokens, familyStyles, dialogStyles, currentMonitorStyles];
+  static styles = [designTokens, familyStyles, dialogStyles, componentStyles, glowStyles, currentMonitorStyles];
 }
 
 if (!customElements.get('current-monitor-card')) {

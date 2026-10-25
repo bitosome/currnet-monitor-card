@@ -223,8 +223,8 @@ phaseTrigger.click();
 await wait();
 let phaseDialog = modalRoot.querySelector('dialog');
 check('phase aggregator opens a native modal with an accessible MDI X',
-  phaseDialog?.open && phaseDialog.getAttribute('aria-labelledby') === 'phase-title' &&
-  phaseDialog.querySelector('[aria-label="Close phase L1 circuits"] ha-icon')?.icon === 'mdi:close');
+  phaseDialog?.open && phaseDialog.getAttribute('aria-label') === 'Phase L1 · 1 circuit' &&
+  phaseDialog.querySelector('[aria-label="Close Phase L1 · 1 circuit"] ha-icon')?.icon === 'mdi:close');
 check('native dialog leaves Home Assistant scroll styles untouched', document.body.style.overflow === 'clip');
 check('phase dialog initial focus belongs to its heading', phaseDialog.contains(modalRoot.activeElement));
 const noteTrigger = phaseDialog.querySelector('.note-trigger');
@@ -236,9 +236,9 @@ await wait();
 check('a phase note replaces the top layer instead of stacking competing dialogs',
   modalRoot.querySelectorAll('dialog').length === 1 && modalRoot.querySelector('dialog')?.open &&
   modalRoot.querySelector('.note-body')?.textContent.includes('Kitchen circuit documentation'));
-modalRoot.querySelector('dialog').dispatchEvent(new win.Event('cancel', { cancelable: true }));
+modalRoot.querySelector('[aria-label="Back"]').click();
 await wait();
-check('Escape from a note returns to the phase list',
+check('Back from a note returns to the phase list',
   modalRoot.querySelector('.agg-panel')?.open && !modalRoot.querySelector('.note-panel'));
 phaseDialog = modalRoot.querySelector('dialog');
 modalCard.hass = { states: { ...editor.hass.states, 'sensor.second': { state: '3.5', attributes: { unit_of_measurement: 'A' } } } };
@@ -256,6 +256,13 @@ modalCard.addEventListener('hass-more-info', () => { moreInfoWhileModalOpen = !!
 modalRoot.querySelector('.agg-panel .tile').click();
 await wait();
 check('entity more-info releases custom modal ownership first', !moreInfoWhileModalOpen && !modalRoot.querySelector('dialog'));
+phaseTrigger.click();
+await wait();
+modalRoot.querySelector('.note-trigger').click();
+await wait();
+modalRoot.querySelector('dialog').dispatchEvent(new win.Event('cancel', { cancelable: true }));
+await wait();
+check('Escape from a child note closes the whole flow', !modalRoot.querySelector('dialog'));
 phaseTrigger.click();
 await wait();
 const removedDialog = modalRoot.querySelector('dialog');

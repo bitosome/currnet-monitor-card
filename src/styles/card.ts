@@ -13,7 +13,7 @@ export const currentMonitorStyles = css`
     }
 
     ha-card.monitor-card {
-      overflow: hidden;
+      overflow: visible;
       border-radius: var(--ha-card-border-radius, 24px);
       background: var(--ha-card-background, var(--card-background-color));
       box-shadow: var(--ha-card-box-shadow, none);
@@ -53,22 +53,6 @@ export const currentMonitorStyles = css`
     .tile-wrap {
       position: relative;
       min-width: 0;
-    }
-
-    .glow-under {
-      position: absolute;
-      inset: var(--small-gap);
-      z-index: 0;
-      border-radius: var(--tile-border-radius);
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .glow-under.alert {
-      box-shadow: 0 0 18px var(--status-alert-color);
-      background: color-mix(in srgb, var(--status-alert-color) 16%, transparent);
-      box-shadow: 0 0 18px color-mix(in srgb, var(--status-alert-color) 52%, transparent);
-      opacity: 1;
     }
 
     .tile {

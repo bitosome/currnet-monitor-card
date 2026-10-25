@@ -154,7 +154,9 @@ This card is part of the `bitosome` Home Assistant card family used by:
 - `real-electricity-price-card`;
 - `smartevse-dual-charger-card`.
 
-The canonical shared library is `space-hub-card/src/shared/design-tokens.ts`. It is vendored into this repository at `src/shared/design-tokens.ts` for a self-contained HACS build and composed into both the card and editor Lit styles. The canonical unavailable-state helper is also reused through `src/shared/state.ts`.
+The card and editor bundle the pinned [`@bitosome/ha-card-ui`](https://github.com/bitosome/ha-card-ui) 1.0.0 library. The `src/shared` UI modules are compatibility re-exports; shared implementation is changed in the library. Domain-specific unavailable-state interpretation remains local.
+
+Version 0.7.0 uses a single shared modal flow: phase circuits can open a note; Back returns to the phase, while X/Escape close the whole flow. Native entity more-info closes the custom dialog first. Alert glows use Space Hub’s two-layer under-tile renderer with steady warning feedback. No extra dashboard resource is required.
 
 UI code uses the shared spacing, tile radii, shadows, and semantic `--status-*` palette instead of defining a separate visual language.
 
