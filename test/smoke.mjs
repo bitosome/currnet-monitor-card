@@ -206,6 +206,64 @@ document.body.appendChild(maxEditor);
 await wait(80);
 check('add button is disabled at 48 tiles', maxEditor.shadowRoot?.querySelector('[data-action="add-tile"]')?.disabled === true);
 
+// Native top-layer dialogs do not change HA's global page scroll state.
+const modalCard = document.createElement('current-monitor-card');
+modalCard.setConfig({ columns: 3, tiles: [
+  { entity: 'sensor.first', name: 'Phase L1', phase: 'L1', aggregator: true },
+  { entity: 'sensor.second', name: 'Kitchen', phase: 'L1', note: 'Kitchen circuit documentation', active: false },
+] });
+modalCard.hass = { states: editor.hass.states };
+document.body.appendChild(modalCard);
+await wait();
+const modalRoot = modalCard.shadowRoot;
+const phaseTrigger = modalRoot.querySelector('.tile');
+phaseTrigger.focus();
+document.body.style.overflow = 'clip';
+phaseTrigger.click();
+await wait();
+let phaseDialog = modalRoot.querySelector('dialog');
+check('phase aggregator opens a native modal with an accessible MDI X',
+  phaseDialog?.open && phaseDialog.getAttribute('aria-labelledby') === 'phase-title' &&
+  phaseDialog.querySelector('[aria-label="Close phase L1 circuits"] ha-icon')?.icon === 'mdi:close');
+check('native dialog leaves Home Assistant scroll styles untouched', document.body.style.overflow === 'clip');
+check('phase dialog initial focus belongs to its heading', phaseDialog.contains(modalRoot.activeElement));
+const noteTrigger = phaseDialog.querySelector('.note-trigger');
+check('circuit notes have a separate keyboard reachable button',
+  noteTrigger?.localName === 'button' && !noteTrigger.closest('.tile'));
+noteTrigger.focus();
+noteTrigger.click();
+await wait();
+check('a phase note replaces the top layer instead of stacking competing dialogs',
+  modalRoot.querySelectorAll('dialog').length === 1 && modalRoot.querySelector('dialog')?.open &&
+  modalRoot.querySelector('.note-body')?.textContent.includes('Kitchen circuit documentation'));
+modalRoot.querySelector('dialog').dispatchEvent(new win.Event('cancel', { cancelable: true }));
+await wait();
+check('Escape from a note returns to the phase list',
+  modalRoot.querySelector('.agg-panel')?.open && !modalRoot.querySelector('.note-panel'));
+phaseDialog = modalRoot.querySelector('dialog');
+modalCard.hass = { states: { ...editor.hass.states, 'sensor.second': { state: '3.5', attributes: { unit_of_measurement: 'A' } } } };
+await wait();
+check('phase telemetry updates keep the same open native dialog',
+  modalRoot.querySelector('dialog') === phaseDialog && phaseDialog.open && phaseDialog.textContent.includes('3.5'));
+phaseDialog.dispatchEvent(new win.Event('cancel', { cancelable: true }));
+await wait();
+check('Escape dismisses the phase modal and returns to the original tile',
+  !modalRoot.querySelector('dialog') && modalRoot.activeElement === phaseTrigger);
+phaseTrigger.click();
+await wait();
+let moreInfoWhileModalOpen = true;
+modalCard.addEventListener('hass-more-info', () => { moreInfoWhileModalOpen = !!modalRoot.querySelector('dialog')?.open; });
+modalRoot.querySelector('.agg-panel .tile').click();
+await wait();
+check('entity more-info releases custom modal ownership first', !moreInfoWhileModalOpen && !modalRoot.querySelector('dialog'));
+phaseTrigger.click();
+await wait();
+const removedDialog = modalRoot.querySelector('dialog');
+modalCard.remove();
+check('removing an open card releases its top-layer modal without changing scroll styles',
+  !removedDialog.open && document.body.style.overflow === 'clip');
+document.body.style.overflow = '';
+
 const failed = checks.filter(([, passed]) => !passed);
 console.log(failed.length ? `\n${failed.length} SMOKE TEST(S) FAILED` : '\nSMOKE TEST OK');
 process.exit(failed.length ? 1 : 0);

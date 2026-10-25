@@ -22,6 +22,18 @@
         color: var(--primary-text-color);
       }
 
+      :root[data-theme="light"] {
+        color-scheme: light;
+        --primary-text-color: #23272f;
+        --secondary-text-color: #596474;
+        --disabled-text-color: #7a8390;
+        --primary-color: #6650a4;
+        --ha-card-background: #fff;
+        --card-background-color: #fff;
+        --secondary-background-color: #edf0f4;
+        --divider-color: #28354429;
+        background: #f3f5f8;
+      }
       body { margin: 0; padding: 28px; }
       main { display: grid; grid-template-columns: minmax(420px, 1fr) minmax(360px, 520px); gap: 28px; max-width: 1400px; margin: 0 auto; align-items: start; }
       .stage, .editor-stage { min-width: 0; }
@@ -45,12 +57,16 @@
     </main>
 
     <script type="module">
+      document.documentElement.dataset.theme = new URLSearchParams(location.search).get('theme') || 'dark';
       class PreviewIcon extends HTMLElement {
         static get observedAttributes() { return ['icon']; }
         connectedCallback() { this.render(); }
         attributeChangedCallback() { this.render(); }
+        set icon(value) { this.setAttribute('icon', value); }
+        get icon() { return this.getAttribute('icon'); }
         render() {
           const icon = this.getAttribute('icon') || '';
+          if (icon === 'mdi:close') { this.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>'; return; }
           this.textContent = icon.includes('plus') ? '+' : icon.includes('delete') ? '×' : icon.includes('up') ? '↑' : icon.includes('down') ? '↓' : icon.includes('drag') ? '⠿' : '•';
         }
       }
@@ -94,6 +110,16 @@
         tiles,
       };
 
+      if (new URLSearchParams(location.search).get('scenario') === 'dialogs') {
+        config.columns = 3;
+        config.tiles = [
+          { ...tiles[0], name: 'Phase L1', phase: 'L1', aggregator: true },
+          { ...tiles[1], name: 'Phase L2', phase: 'L2', aggregator: true },
+          { ...tiles[2], name: 'Phase L3', phase: 'L3', aggregator: true },
+          ...tiles.slice(3).map((tile, index) => ({ ...tile, phase: `L${index % 3 + 1}`, active: false,
+            note: `${tile.name} circuit. Isolate this circuit before maintenance. Reference documentation is available in Home Assistant.` })),
+        ];
+      }
       const card = document.createElement('current-monitor-card');
       card.setConfig(config);
       card.hass = hass;

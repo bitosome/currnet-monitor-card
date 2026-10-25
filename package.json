@@ -1,6 +1,6 @@
 {
   "name": "current-monitor-card",
-  "version": "0.1.0",
+  "version": "0.6.3",
   "description": "A configurable multi-sensor current monitor card for Home Assistant",
   "keywords": [
     "home-assistant",

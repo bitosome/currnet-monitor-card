@@ -127,7 +127,7 @@ export class CurrentMonitorCardEditor extends LitElement {
 
         <section class="panel" aria-labelledby="limits-heading">
           <h3 id="limits-heading">Meter limits (A)</h3>
-          <p class="hint">Segments are cumulative. Alert blinking begins above the alert limit.</p>
+          <p class="hint">Segments are cumulative. A steady alert appears above the alert limit.</p>
           <div class="limits-grid">
             ${this._limitField('Green', 'green', limits.green)}
             ${this._limitField('Yellow', 'yellow', limits.yellow)}
@@ -587,7 +587,7 @@ export class CurrentMonitorCardEditor extends LitElement {
     textarea {
       width: 100%;
       min-width: 0;
-      min-height: 42px;
+      min-height: 44px;
       padding: 9px 10px;
       border: 1px solid var(--divider-color, rgba(128, 128, 128, 0.28));
       border-radius: var(--tile-border-radius);
@@ -595,7 +595,7 @@ export class CurrentMonitorCardEditor extends LitElement {
       background: var(--secondary-background-color, rgba(128, 128, 128, 0.08));
       color: var(--primary-text-color);
       font: inherit;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 500;
     }
 
@@ -679,7 +679,7 @@ export class CurrentMonitorCardEditor extends LitElement {
     }
 
     .action-button {
-      min-height: 38px;
+      min-height: 44px;
       padding: 7px 12px;
       font-size: 13px;
       font-weight: 700;
@@ -744,7 +744,7 @@ export class CurrentMonitorCardEditor extends LitElement {
     }
 
     .tile-summary strong {
-      font-size: 14px;
+      font-size: 16px;
     }
 
     .tile-summary span {
@@ -759,8 +759,8 @@ export class CurrentMonitorCardEditor extends LitElement {
     }
 
     .icon-button {
-      width: 34px;
-      height: 34px;
+      width: 44px;
+      height: 44px;
       padding: 0;
     }
 

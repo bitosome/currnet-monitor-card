@@ -14,7 +14,7 @@ The card mirrors a physical four-segment current meter while using the shared `b
 - Optional tile names and unit overrides.
 - Four cumulative current segments: green, yellow, orange, and red.
 - Configurable limits and decimal precision.
-- Alert animation above the configured alert limit.
+- Persistent alert color and underglow above the configured alert limit.
 - Tap or hold any configured tile to open Home Assistant's more-info dialog.
 - Entity `unit_of_measurement` and `friendly_name` support.
 - Safe handling of missing, `unknown`, `unavailable`, and non-numeric states.
@@ -97,7 +97,7 @@ The same configuration is available in [`example.yaml`](./example.yaml).
 | `limits.green` | number (A) | `4` | Upper limit for one active green segment. |
 | `limits.yellow` | number (A) | `8` | Upper limit for green and yellow segments. |
 | `limits.orange` | number (A) | `12` | Upper limit for green, yellow, and orange segments. |
-| `limits.alert` | number (A) | `16` | Values above this limit blink in alert mode. |
+| `limits.alert` | number (A) | `16` | Values above this limit show a steady alert border, reading and underglow. |
 | `tiles` | array | three empty named tiles in the card picker | Ordered list of tile configurations. Maximum 48. |
 | `tiles[].entity` | string | empty | Sensor entity whose numeric state is displayed. |
 | `tiles[].name` | string | empty | Optional display name. If left empty, no name is shown (the entity name is still used for accessibility). |
@@ -127,7 +127,7 @@ With the defaults, the cumulative segment behavior is:
 | `> 4 A` to `8 A` | green + yellow | elevated |
 | `> 8 A` to `12 A` | green + yellow + orange | high |
 | `> 12 A` to `16 A` | all four | red, steady |
-| `> 16 A` | all four | alert animation |
+| `> 16 A` | all four | steady alert |
 
 The strict `> alert` boundary intentionally matches the physical monitor in the sibling `esphome-current-monitor` project.
 
