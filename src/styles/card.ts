@@ -13,7 +13,9 @@ export const currentMonitorStyles = css`
     }
 
     ha-card.monitor-card {
-      overflow: visible;
+      /* Keep decorative light inside this card's rounded outer boundary.
+       * Padded focus rings fit inside; native top-layer dialogs remain outside. */
+      overflow: clip;
       border-radius: var(--ha-card-border-radius, 24px);
       background: var(--ha-card-background, var(--card-background-color));
       box-shadow: var(--ha-card-box-shadow, none);
