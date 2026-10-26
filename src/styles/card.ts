@@ -23,9 +23,13 @@ export const currentMonitorStyles = css`
       display: grid;
       gap: var(--large-gap);
       padding: var(--tile-padding-large);
+      /* One card-wide scope: glows remain below every reading and heading. */
+      isolation: isolate;
     }
 
     h2 {
+      position: relative;
+      z-index: 1;
       margin: 0;
       overflow-wrap: anywhere;
       color: var(--primary-text-color);
@@ -39,7 +43,6 @@ export const currentMonitorStyles = css`
       grid-template-columns: repeat(var(--cmc-columns), minmax(0, 1fr));
       gap: var(--large-gap);
       width: 100%;
-      isolation: isolate;
     }
 
     .tiles.compact {
@@ -289,7 +292,8 @@ export const currentMonitorStyles = css`
 
     .agg-panel { --family-dialog-width: 720px; }
 
-    .agg-panel .tiles {
+    .agg-panel .family-dialog-body {
+      /* The modal owns its own scope; individual rows must not isolate glows. */
       isolation: isolate;
     }
 
