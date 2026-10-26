@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 — 2026-10-26
+
+- Use the shared details icon for phase aggregators, explicitly bounded to 16px so it cannot grow over the reading.
+- Give circuit and note launchers consistent dialog semantics and restore focus to the actual tapped control on touch browsers.
+- Keep configuration in Home Assistant's native card editor and retain the shared Back/X flow for phase and note details.
+
+Validation: typecheck, production build and 50 offline smoke checks. Mobile browser checks verify icon sizing, phase-to-note navigation and focus return. Thresholds, readings and configured circuit order are unchanged.
+
 ## 0.6.3 — 2026-10-25
 
 - Adopt the shared Space Hub design primitives, synchronized tokens and source/hash provenance.

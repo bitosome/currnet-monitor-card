@@ -2,7 +2,7 @@ import { LitElement, TemplateResult, html, nothing } from 'lit';
 import { currentMonitorStyles } from './styles/card';
 import { repeat } from 'lit/directives/repeat.js';
 import { designTokens } from './shared/design-tokens';
-import { familyStyles, dialogStyles, componentStyles, FamilyFlowController, renderFamilyDialog, stateChip, showEntityMoreInfo, buildGlow, tileGlow, glowStyles } from '@bitosome/ha-card-ui';
+import { familyStyles, dialogStyles, componentStyles, FamilyFlowController, renderFamilyDialog, stateChip, showEntityMoreInfo, buildGlow, tileGlow, glowStyles, uiIcon } from '@bitosome/ha-card-ui';
 import {
   CARD_TYPE,
   CARD_VERSION,
@@ -200,6 +200,7 @@ export class CurrentMonitorCard extends LitElement {
           data-meter-level=${reading.level}
           aria-label=${isAggregator ? `${ariaLabel} (aggregator)` : ariaLabel}
           aria-disabled=${entityId || isAggregator ? 'false' : 'true'}
+          aria-haspopup=${entityId || isAggregator ? 'dialog' : nothing}
           title=${isAggregator
             ? `Show all ${phase} circuits`
             : entityId
@@ -209,10 +210,10 @@ export class CurrentMonitorCard extends LitElement {
           @pointerup=${this._finishHold}
           @pointercancel=${this._abortHold}
           @pointerleave=${this._abortHold}
-          @click=${() => this._handleTileClick(entityId, tile, inModal)}
+          @click=${(event: MouseEvent) => this._handleTileClick(entityId, tile, inModal, event.currentTarget as HTMLElement)}
         >
           ${isAggregator
-            ? html`<span class="agg-indicator" aria-hidden="true">\u2922</span>`
+            ? html`<span class="agg-indicator" aria-hidden="true">${uiIcon("details")}</span>`
             : nothing}
           <span class="meter" aria-hidden="true">
             ${SEGMENTS.map((segment) => html`
@@ -249,7 +250,7 @@ export class CurrentMonitorCard extends LitElement {
           </span>
         </button>
         ${note ? html`<button class="note-trigger" type="button" aria-label=${`Show note for ${displayName || name}`}
-          @click=${() => this._openNote(displayName || name, phase, currentTransformer, note)}><span>${note}</span></button>` : nothing}
+          aria-haspopup="dialog" @click=${(event: MouseEvent) => this._openNote(displayName || name, phase, currentTransformer, note, event.currentTarget as HTMLElement)}><span>${note}</span></button>` : nothing}
       </div>
     `;
   }
@@ -258,15 +259,15 @@ export class CurrentMonitorCard extends LitElement {
     if (entityId) this._flow.handoff(() => showEntityMoreInfo(this, entityId));
   }
 
-  private _openNote(title: string, phase: string, ct: string, note: string): void {
+  private _openNote(title: string, phase: string, ct: string, note: string, opener?: HTMLElement): void {
     this._noteModal = { title, phase, ct, note };
     if (this._flow.active) this._flow.push('note');
-    else this._flow.open('note');
+    else this._flow.open('note', opener);
   }
 
-  private _openAggregator(phase: string): void {
+  private _openAggregator(phase: string, opener?: HTMLElement): void {
     this._aggregatorPhase = phase;
-    this._flow.open('phase');
+    this._flow.open('phase', opener);
   }
 
   private _renderDialog() {
@@ -331,7 +332,7 @@ export class CurrentMonitorCard extends LitElement {
     this._holdTriggered = false;
   };
 
-  private _handleTileClick(entityId: string, tile?: CurrentMonitorTileConfig, inModal = false): void {
+  private _handleTileClick(entityId: string, tile?: CurrentMonitorTileConfig, inModal = false, opener?: HTMLElement): void {
     if (this._holdTriggered) {
       this._clearHoldReset();
       this._holdTriggered = false;
@@ -340,7 +341,7 @@ export class CurrentMonitorCard extends LitElement {
     if (!inModal && tile?.aggregator === true) {
       const phase = tile.phase?.trim() || '';
       if (phase) {
-        this._openAggregator(phase);
+        this._openAggregator(phase, opener);
         return;
       }
     }

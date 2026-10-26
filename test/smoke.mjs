@@ -271,6 +271,32 @@ check('removing an open card releases its top-layer modal without changing scrol
   !removedDialog.open && document.body.style.overflow === 'clip');
 document.body.style.overflow = '';
 
+// Touch taps do not necessarily focus their button before opening a modal.
+const touchCard = document.createElement('current-monitor-card');
+touchCard.setConfig({ columns: 2, tiles: [
+  { entity: 'sensor.first', name: 'Phase', phase: 'L1', aggregator: true },
+  { entity: 'sensor.second', name: 'Kitchen', phase: 'L1', note: 'Read-only circuit notes' },
+] });
+touchCard.hass = { states: editor.hass.states };
+document.body.append(touchCard); await wait();
+const touchRoot = touchCard.shadowRoot;
+const unrelated = document.createElement('button'); document.body.append(unrelated); unrelated.focus();
+const touchPhase = touchRoot.querySelector('.is-aggregator');
+check('phase drilldown uses the common details icon and dialog disclosure semantics',
+  touchPhase.querySelector('.agg-indicator ha-icon')?.icon === 'mdi:information-outline' &&
+  touchPhase.getAttribute('aria-haspopup') === 'dialog');
+touchPhase.click(); await wait();
+touchRoot.querySelector('dialog .family-dialog-header [title="Close"]').click(); await wait();
+check('a non-focusing touch phase launch restores its actual opener', touchRoot.activeElement === touchPhase);
+unrelated.focus();
+const touchNote = touchRoot.querySelector('.note-trigger'); touchNote.click(); await wait();
+check('a direct note has dialog semantics without pretending to be a configuration tab',
+  touchNote.getAttribute('aria-haspopup') === 'dialog' &&
+  !touchRoot.querySelector('dialog [aria-label="Back"]') && !touchRoot.querySelector('[role="tab"]'));
+touchRoot.querySelector('dialog .family-dialog-header [title="Close"]').click(); await wait();
+check('a non-focusing touch note launch restores its actual opener', touchRoot.activeElement === touchNote);
+touchCard.remove(); unrelated.remove();
+
 const failed = checks.filter(([, passed]) => !passed);
 console.log(failed.length ? `\n${failed.length} SMOKE TEST(S) FAILED` : '\nSMOKE TEST OK');
 process.exit(failed.length ? 1 : 0);

@@ -285,6 +285,8 @@ export const currentMonitorStyles = css`
       pointer-events: none;
     }
 
+    .agg-indicator ha-icon { display: block; width: 16px; height: 16px; --mdc-icon-size: 16px; }
+
     .agg-panel { --family-dialog-width: 720px; }
 
     .agg-panel .tiles {
