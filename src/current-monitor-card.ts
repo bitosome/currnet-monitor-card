@@ -2,7 +2,7 @@ import { LitElement, TemplateResult, html, nothing } from 'lit';
 import { currentMonitorStyles } from './styles/card';
 import { repeat } from 'lit/directives/repeat.js';
 import { designTokens } from './shared/design-tokens';
-import { familyStyles, dialogStyles, componentStyles, FamilyFlowController, renderFamilyDialog, stateChip, notice, showEntityMoreInfo, buildGlow, tileGlow, glowStyles, uiIcon, formatHassNumber, UNAVAILABLE_TEXT } from '@bitosome/ha-card-ui';
+import { familyStyles, dialogStyles, componentStyles, headerStyles, FamilyFlowController, renderFamilyDialog, stateChip, notice, showEntityMoreInfo, buildGlow, tileGlow, glowStyles, uiIcon, formatHassNumber, UNAVAILABLE_TEXT } from '@bitosome/ha-card-ui';
 import {
   CARD_TYPE,
   CARD_VERSION,
@@ -355,7 +355,7 @@ export class CurrentMonitorCard extends LitElement {
     this._openMoreInfo(entityId);
   }
 
-  static styles = [designTokens, familyStyles, dialogStyles, componentStyles, glowStyles, currentMonitorStyles];
+  static styles = [designTokens, familyStyles, dialogStyles, componentStyles, headerStyles, glowStyles, currentMonitorStyles];
 }
 
 if (!customElements.get('current-monitor-card')) {

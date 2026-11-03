@@ -83,7 +83,9 @@ check('unavailable readings say Unavailable without a unit',
     && cardRoot?.querySelector('[data-index="10"] .reading')?.classList.contains('family-unavailable')
     && !cardRoot?.querySelector('[data-index="10"] .unit')
     && cardRoot?.querySelector('[data-index="10"]')?.getAttribute('aria-label')?.endsWith(': Unavailable'));
-check('the card title uses the shared family title', cardRoot?.querySelector('h2')?.classList.contains('family-title'));
+check('the card title uses the shared family title',
+  cardRoot?.querySelector('h2')?.classList.contains('family-title')
+    && Card.elementStyles.some((style) => /(^|[\s,}])\.family-title\s*\{[^}]*font-size/.test(style.cssText || '')));
 check('tile columns keep a 44px touch target minimum', Card.elementStyles.some((style) => style.cssText?.includes('max(44px')));
 check('entity unit is displayed', cardRoot?.querySelector('[data-index="2"] .unit')?.textContent === 'mA');
 check('exact 4 A stays at level one', cardRoot?.querySelector('[data-index="11"]')?.getAttribute('data-meter-level') === '1');
