@@ -1,5 +1,6 @@
 import { LitElement, TemplateResult, css, html } from 'lit';
 import { designTokens } from './shared/design-tokens';
+import { familyStyles } from '@bitosome/ha-card-ui';
 import {
   CARD_TYPE,
   DEFAULT_LIMITS,
@@ -499,7 +500,7 @@ export class CurrentMonitorCardEditor extends LitElement {
     }));
   }
 
-  static styles = [designTokens, css`
+  static styles = [designTokens, familyStyles, css`
     :host {
       color: var(--primary-text-color);
       font-family: var(--paper-font-body1_-_font-family, Roboto, sans-serif);
@@ -636,17 +637,17 @@ export class CurrentMonitorCardEditor extends LitElement {
       background: var(--limit-color);
     }
 
-    .limit-field.green { --limit-color: var(--status-success-color); }
-    .limit-field.yellow { --limit-color: var(--status-dry-color); }
-    .limit-field.orange { --limit-color: var(--status-warn-color); }
-    .limit-field.alert { --limit-color: var(--status-alert-color); }
+    .limit-field.green { --limit-color: var(--family-success); }
+    .limit-field.yellow { --limit-color: var(--family-caution); }
+    .limit-field.orange { --limit-color: var(--family-warning); }
+    .limit-field.alert { --limit-color: var(--family-error); }
 
     .validation-error {
       padding: var(--tile-padding);
       border-radius: var(--tile-border-radius);
       background: var(--secondary-background-color, rgba(128, 128, 128, 0.12));
-      background: color-mix(in srgb, var(--status-alert-color) 12%, transparent);
-      color: var(--status-alert-color);
+      background: color-mix(in srgb, var(--family-error) 12%, transparent);
+      color: var(--family-error);
       font-size: 12px;
       font-weight: 700;
     }
@@ -765,7 +766,7 @@ export class CurrentMonitorCardEditor extends LitElement {
     }
 
     .icon-button.danger {
-      color: var(--status-alert-color);
+      color: var(--family-error);
     }
 
     ha-form,

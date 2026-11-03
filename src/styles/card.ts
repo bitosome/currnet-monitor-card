@@ -29,30 +29,32 @@ export const currentMonitorStyles = css`
       isolation: isolate;
     }
 
-    h2 {
+    /* Typography comes from the shared .family-title; only the glow layer is local. */
+    h2.family-title {
       position: relative;
       z-index: 1;
-      margin: 0;
-      overflow-wrap: anywhere;
       color: var(--primary-text-color);
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.2;
     }
 
     .tiles {
+      --cmc-gap: var(--large-gap);
       display: grid;
-      grid-template-columns: repeat(var(--cmc-columns), minmax(0, 1fr));
-      gap: var(--large-gap);
+      /* Honour the configured column count while each tile stays a 44px touch
+       * target; narrower cards wrap to as many columns as fit. */
+      grid-template-columns: repeat(
+        auto-fill,
+        minmax(max(44px, calc((100% - (var(--cmc-columns) - 1) * var(--cmc-gap)) / var(--cmc-columns) - 0.1px)), 1fr)
+      );
+      gap: var(--cmc-gap);
       width: 100%;
     }
 
     .tiles.compact {
-      gap: var(--medium-gap);
+      --cmc-gap: var(--medium-gap);
     }
 
     .tiles.dense {
-      gap: var(--small-gap);
+      --cmc-gap: var(--small-gap);
     }
 
     .tile-wrap {
@@ -93,10 +95,10 @@ export const currentMonitorStyles = css`
       -webkit-tap-highlight-color: transparent;
     }
 
-    .tile.level-green { --cmc-level-color: var(--status-success-color); }
-    .tile.level-yellow { --cmc-level-color: var(--status-dry-color); }
-    .tile.level-orange { --cmc-level-color: var(--status-warn-color); }
-    .tile.level-red { --cmc-level-color: var(--status-alert-color); }
+    .tile.level-green { --cmc-level-color: var(--family-success); }
+    .tile.level-yellow { --cmc-level-color: var(--family-caution); }
+    .tile.level-orange { --cmc-level-color: var(--family-warning); }
+    .tile.level-red { --cmc-level-color: var(--family-error); }
 
     .tile.unavailable {
       --cmc-level-color: var(--disabled-text-color, var(--secondary-text-color));
@@ -173,22 +175,33 @@ export const currentMonitorStyles = css`
       justify-content: flex-end;
     }
 
-    .meta-phase.phase-l1 {
+    /* IEC conductor colours: a domain choice shared by tile badges and note chips. */
+    .meta-phase.phase-l1,
+    .family-chip.phase-l1 {
       border-color: #5d4037;
       background: #795548;
       color: #fff;
     }
 
-    .meta-phase.phase-l2 {
+    .meta-phase.phase-l2,
+    .family-chip.phase-l2 {
       border-color: #000;
       background: #212121;
       color: #fff;
     }
 
-    .meta-phase.phase-l3 {
+    .meta-phase.phase-l3,
+    .family-chip.phase-l3 {
       border-color: #757575;
       background: #9e9e9e;
       color: #212121;
+    }
+
+    .family-chip.phase-l1,
+    .family-chip.phase-l2,
+    .family-chip.phase-l3 {
+      border-width: 1px;
+      border-style: solid;
     }
 
     .meta-name {
@@ -234,35 +247,6 @@ export const currentMonitorStyles = css`
       flex-wrap: wrap;
       gap: 6px;
       margin-bottom: 8px;
-    }
-
-    .note-badge {
-      padding: 2px 9px;
-      border: 1px solid var(--divider-color, rgba(128, 128, 128, 0.3));
-      border-radius: 999px;
-      background: var(--secondary-background-color, rgba(128, 128, 128, 0.14));
-      color: var(--primary-text-color);
-      font-size: 12px;
-      font-weight: 600;
-      line-height: 1.5;
-    }
-
-    .note-badge.phase-l1 {
-      border-color: #5d4037;
-      background: #795548;
-      color: #fff;
-    }
-
-    .note-badge.phase-l2 {
-      border-color: #000;
-      background: #212121;
-      color: #fff;
-    }
-
-    .note-badge.phase-l3 {
-      border-color: #757575;
-      background: #9e9e9e;
-      color: #212121;
     }
 
     .note-body {
@@ -328,7 +312,7 @@ export const currentMonitorStyles = css`
       overflow: hidden;
       color: var(--secondary-text-color);
       font-size: 10px;
-      font-weight: 700;
+      font-weight: 500;
       line-height: 1;
       letter-spacing: 0;
       text-overflow: ellipsis;
@@ -358,10 +342,10 @@ export const currentMonitorStyles = css`
       opacity: 0.18;
     }
 
-    .segment.green { --segment-color: var(--status-success-color); }
-    .segment.yellow { --segment-color: var(--status-dry-color); }
-    .segment.orange { --segment-color: var(--status-warn-color); }
-    .segment.red { --segment-color: var(--status-alert-color); }
+    .segment.green { --segment-color: var(--family-success); }
+    .segment.yellow { --segment-color: var(--family-caution); }
+    .segment.orange { --segment-color: var(--family-warning); }
+    .segment.red { --segment-color: var(--family-error); }
 
     .segment.active {
       background: currentColor;
@@ -372,35 +356,22 @@ export const currentMonitorStyles = css`
 
     .tile.alert {
       box-shadow: var(--tile-shadow-active);
-      border-color: var(--status-alert-color);
+      border-color: var(--family-error);
     }
 
     .tile.alert .reading {
-      color: color-mix(in srgb, var(--status-alert-color) 55%, var(--primary-text-color));
+      color: color-mix(in srgb, var(--family-error) 55%, var(--primary-text-color));
     }
 
-    .segment-alert { color: var(--status-alert-color); }
-
-    .configuration-error,
-    .empty-state {
-      padding: var(--tile-padding-large);
-      border-radius: var(--tile-border-radius);
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1.4;
+    /* The word replaces the number, so it is sized to fit the tile instead. */
+    .reading.family-unavailable {
+      color: var(--family-unavailable);
+      font-size: clamp(8px, 13cqw, 16px);
+      font-weight: 500;
+      letter-spacing: 0;
     }
 
-    .configuration-error {
-      background: var(--secondary-background-color, rgba(128, 128, 128, 0.12));
-      background: color-mix(in srgb, var(--status-alert-color) 12%, transparent);
-      color: var(--status-alert-color);
-    }
-
-    .empty-state {
-      border: 1px dashed var(--divider-color, rgba(128, 128, 128, 0.3));
-      color: var(--secondary-text-color);
-      text-align: center;
-    }
+    .segment-alert { color: var(--family-error); }
 
     @container (max-width: 64px) {
       .meter {
@@ -427,6 +398,10 @@ export const currentMonitorStyles = css`
 
       .reading {
         font-size: clamp(9px, 24cqw, 16px);
+      }
+
+      .reading.family-unavailable {
+        font-size: clamp(7px, 14cqw, 12px);
       }
 
 

@@ -2,7 +2,7 @@ import { LitElement, TemplateResult, html, nothing } from 'lit';
 import { currentMonitorStyles } from './styles/card';
 import { repeat } from 'lit/directives/repeat.js';
 import { designTokens } from './shared/design-tokens';
-import { familyStyles, dialogStyles, componentStyles, FamilyFlowController, renderFamilyDialog, stateChip, showEntityMoreInfo, buildGlow, tileGlow, glowStyles, uiIcon } from '@bitosome/ha-card-ui';
+import { familyStyles, dialogStyles, componentStyles, FamilyFlowController, renderFamilyDialog, stateChip, notice, showEntityMoreInfo, buildGlow, tileGlow, glowStyles, uiIcon, formatHassNumber, UNAVAILABLE_TEXT } from '@bitosome/ha-card-ui';
 import {
   CARD_TYPE,
   CARD_VERSION,
@@ -32,6 +32,11 @@ const SEGMENTS = [
 
 function levelClass(level: MeterLevel): string {
   return ['neutral', 'green', 'yellow', 'orange', 'red'][level] || 'neutral';
+}
+
+/** IEC conductor colour hook shared by tile badges and the note dialog chip. */
+function phaseModifier(phase: string): string {
+  return /^l[123]$/i.test(phase) ? `phase-${phase.toLowerCase()}` : '';
 }
 
 function textAttribute(entity: HassEntity | undefined, key: string): string {
@@ -131,11 +136,11 @@ export class CurrentMonitorCard extends LitElement {
     return html`
       <ha-card class="monitor-card">
         <div class="content">
-          ${title ? html`<h2>${title}</h2>` : nothing}
+          ${title ? html`<h2 class="family-title">${title}</h2>` : nothing}
           ${this._configurationError
-            ? html`<div class="configuration-error" role="alert">${this._configurationError}</div>`
+            ? notice({ tone: 'error', message: this._configurationError, className: 'configuration-error' })
             : activeTiles.length === 0
-              ? html`<div class="empty-state">Add at least one current sensor in the card editor.</div>`
+              ? notice({ tone: 'accent', message: 'Add at least one current sensor in the card editor.', className: 'empty-state' })
               : html`
                 <div
                   class="tiles ${densityClass}"
@@ -168,7 +173,7 @@ export class CurrentMonitorCard extends LitElement {
     const name = tile.name?.trim() || friendlyName || fallbackEntityName(entityId) || `Tile ${index + 1}`;
     const displayName = tile.name?.trim() || '';
     const phase = tile.phase?.trim() || '';
-    const phaseClass = /^l[123]$/i.test(phase) ? ` phase-${phase.toLowerCase()}` : '';
+    const phaseClass = phaseModifier(phase);
     const isAggregator = tile.aggregator === true && !inModal && phase !== '';
     const currentTransformer = tile.current_transformer?.trim() || '';
     const note = tile.note?.trim() || '';
@@ -179,19 +184,21 @@ export class CurrentMonitorCard extends LitElement {
     const displayValue = reading.value === undefined
       ? undefined
       : convertCurrentUnit(reading.value, sourceUnit, unit);
-    const display = reading.available && displayValue !== undefined
-      ? displayValue.toFixed(config.decimal_places)
-      : '—';
+    // Unavailable readings say so in words and drop the unit; never `— A`.
+    const available = reading.available && displayValue !== undefined;
+    const display = available
+      ? formatHassNumber(this.hass, displayValue, { digits: config.decimal_places })
+      : UNAVAILABLE_TEXT;
     const level = levelClass(reading.level);
-    const ariaValue = reading.available
+    const ariaValue = available
       ? `${display} ${unit}${reading.alert ? ', alert' : ''}`
-      : 'unavailable';
+      : UNAVAILABLE_TEXT;
     const ariaMeta = [phase, currentTransformer, note].filter(Boolean).join(' · ');
     const ariaLabel = ariaMeta ? `${name} (${ariaMeta}): ${ariaValue}` : `${name}: ${ariaValue}`;
 
     return html`
       <div class="tile-wrap" role="listitem">
-        ${tileGlow(buildGlow({ weak: 'color-mix(in srgb,var(--status-alert-color) 16%,transparent)', strong: 'color-mix(in srgb,var(--status-alert-color) 30%,transparent)' }, 'static', reading.alert))}
+        ${tileGlow(buildGlow({ weak: 'color-mix(in srgb,var(--family-error) 16%,transparent)', strong: 'color-mix(in srgb,var(--family-error) 30%,transparent)' }, 'static', reading.alert))}
         <button
           class="tile level-${level} ${reading.alert ? 'alert' : ''} ${reading.available ? '' : 'unavailable'} ${isAggregator ? 'is-aggregator' : ''}"
           type="button"
@@ -225,8 +232,8 @@ export class CurrentMonitorCard extends LitElement {
           </span>
           <span class="reading-center" aria-hidden="true">
             <span class="reading-anchor">
-              <span class="reading">${display}</span>
-              <span class="unit">${unit}</span>
+              <span class="reading ${available ? '' : 'family-unavailable'}">${display}</span>
+              ${available ? html`<span class="unit">${unit}</span>` : nothing}
             </span>
           </span>
           <span class="tile-meta" aria-hidden="true">
@@ -236,7 +243,7 @@ export class CurrentMonitorCard extends LitElement {
                   ${phase || currentTransformer
                     ? html`
                       <span class="meta-badges">
-                        ${phase ? html`<span class="meta-badge meta-phase${phaseClass}">${phase}</span>` : nothing}
+                        ${phase ? html`<span class="meta-badge meta-phase ${phaseClass}">${phase}</span>` : nothing}
                         ${currentTransformer
                           ? html`<span class="meta-badge meta-ct">${currentTransformer}</span>`
                           : nothing}
@@ -275,7 +282,7 @@ export class CurrentMonitorCard extends LitElement {
       const modal = this._noteModal;
       return renderFamilyDialog(this._flow, {
         title: modal.title || 'Circuit note', className: 'note-panel',
-        content: html`<div class="note-badges">${modal.phase ? stateChip({label: modal.phase}) : nothing}${modal.ct ? stateChip({label: `CT ${modal.ct}`}) : nothing}</div><div class="note-body">${modal.note}</div>`,
+        content: html`<div class="note-badges">${modal.phase ? stateChip({label: modal.phase, ariaLabel: `Phase ${modal.phase}`, className: phaseModifier(modal.phase)}) : nothing}${modal.ct ? stateChip({label: `CT ${modal.ct}`}) : nothing}</div><div class="note-body">${modal.note}</div>`,
       });
     }
     const phase = this._aggregatorPhase;

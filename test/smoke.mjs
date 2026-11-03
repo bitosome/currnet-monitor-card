@@ -78,6 +78,13 @@ check('values above 16 A alert', cardRoot?.querySelector('[data-index="8"]')?.cl
 check('alert state is included in the accessible name', cardRoot?.querySelector('[data-index="8"]')?.getAttribute('aria-label')?.includes('alert'));
 check('unknown states use unavailable presentation', cardRoot?.querySelector('[data-index="9"]')?.classList.contains('unavailable'));
 check('unavailable states use unavailable presentation', cardRoot?.querySelector('[data-index="10"]')?.classList.contains('unavailable'));
+check('unavailable readings say Unavailable without a unit',
+  cardRoot?.querySelector('[data-index="10"] .reading')?.textContent === 'Unavailable'
+    && cardRoot?.querySelector('[data-index="10"] .reading')?.classList.contains('family-unavailable')
+    && !cardRoot?.querySelector('[data-index="10"] .unit')
+    && cardRoot?.querySelector('[data-index="10"]')?.getAttribute('aria-label')?.endsWith(': Unavailable'));
+check('the card title uses the shared family title', cardRoot?.querySelector('h2')?.classList.contains('family-title'));
+check('tile columns keep a 44px touch target minimum', Card.elementStyles.some((style) => style.cssText?.includes('max(44px')));
 check('entity unit is displayed', cardRoot?.querySelector('[data-index="2"] .unit')?.textContent === 'mA');
 check('exact 4 A stays at level one', cardRoot?.querySelector('[data-index="11"]')?.getAttribute('data-meter-level') === '1');
 check('exact 8 A stays at level two', cardRoot?.querySelector('[data-index="12"]')?.getAttribute('data-meter-level') === '2');
@@ -113,6 +120,12 @@ convertedUnitCard.setConfig({
 convertedUnitCard.hass = { states };
 document.body.appendChild(convertedUnitCard);
 await wait();
+convertedUnitCard.hass = { states, locale: { language: 'en', number_format: 'decimal_comma' } };
+await wait();
+check('readings follow the Home Assistant number format',
+  convertedUnitCard.shadowRoot?.querySelector('.reading')?.textContent === '6,0');
+convertedUnitCard.hass = { states };
+await wait();
 check(
   'recognized unit overrides convert the displayed value',
   convertedUnitCard.shadowRoot?.querySelector('.reading')?.textContent === '6.0'
@@ -128,7 +141,22 @@ invalidCard.setConfig({
 invalidCard.hass = { states };
 document.body.appendChild(invalidCard);
 await wait();
-check('invalid limit order renders a configuration error', Boolean(invalidCard.shadowRoot?.querySelector('.configuration-error')));
+const configurationNotice = invalidCard.shadowRoot?.querySelector('.configuration-error');
+check('invalid limit order renders a shared error notice',
+  configurationNotice?.classList.contains('family-notice') && configurationNotice.dataset.tone === 'error'
+    && configurationNotice.getAttribute('role') === 'alert'
+    && configurationNotice.querySelector('.family-notice-icon')?.icon === 'mdi:alert-circle-outline');
+
+const emptyCard = document.createElement('current-monitor-card');
+emptyCard.setConfig({ tiles: [] });
+emptyCard.hass = { states };
+document.body.appendChild(emptyCard);
+await wait();
+const emptyNotice = emptyCard.shadowRoot?.querySelector('.empty-state');
+check('an empty card explains setup with a shared status notice',
+  emptyNotice?.classList.contains('family-notice') && emptyNotice.getAttribute('role') === 'status'
+    && emptyNotice.textContent.includes('Add at least one current sensor'));
+emptyCard.remove();
 
 let tooManyRejected = false;
 try {
@@ -236,6 +264,8 @@ await wait();
 check('a phase note replaces the top layer instead of stacking competing dialogs',
   modalRoot.querySelectorAll('dialog').length === 1 && modalRoot.querySelector('dialog')?.open &&
   modalRoot.querySelector('.note-body')?.textContent.includes('Kitchen circuit documentation'));
+check('the note phase chip keeps its IEC conductor colour hook',
+  modalRoot.querySelector('.note-badges .family-chip')?.classList.contains('phase-l1'));
 modalRoot.querySelector('[aria-label="Back"]').click();
 await wait();
 check('Back from a note returns to the phase list',

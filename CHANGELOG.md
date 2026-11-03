@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0 — 2026-11-03
+
+- Adopt `@bitosome/ha-card-ui` 1.4.0. Meter bands, alert glow and editor limit markers use the shared `--family-*` status colours, so they follow the Home Assistant theme; the yellow band uses the shared caution colour.
+- Unavailable sensors say `Unavailable` without a unit instead of `— A`. Readings follow the Home Assistant number format (decimal comma, grouping) at the configured precision.
+- Show the limit-order error and the empty-card hint as shared notices with a severity icon.
+- The note dialog's phase chip keeps its IEC conductor colour again.
+- Tiles stay at least 44px wide: with many columns on a narrow card, they wrap to as many columns as fit.
+- Use the shared card title style and a lighter unit label.
+
+Validation: typecheck, production build and 56 offline smoke checks. Thresholds, unit conversion, phase colours, configuration options and circuit order are unchanged.
+
 ## 0.7.1 — 2026-10-26
 
 - Use the shared details icon for phase aggregators, explicitly bounded to 16px so it cannot grow over the reading.
